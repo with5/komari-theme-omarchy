@@ -1,6 +1,6 @@
 // Node detail page: machine config, resource history, and ping latency.
 // Reached with Enter from the list (#/node/<uuid>). All drawing is text, like the cards.
-import { esc, wcw, clip, stripEmoji, bytes, uptime, pct, ms, graph, bucketize, meter, box, padL } from "./util.js";
+import { esc, wcw, clip, stripEmoji, bytes, uptime, pct, ms, graph, bucketize, meter, box, padL, txt } from "./util.js";
 import { t as tr } from "./i18n.js";
 import { pingRecords, loadRecords, invalidate } from "./api.js";
 
@@ -130,7 +130,7 @@ export function createDetail(app) {
     const items = [
       ["os", n.os], ["arch", n.arch || (r && r.cpu.arch)], ["virt", n.virtualization], ["kernel", n.kernel_version],
       ["cpu", [n.cpu_name || (r && r.cpu.name), cores && `×${cores}`].filter(Boolean).join(" ") + (n.cpu_physical_cores ? ` (${tr("physical", { n: n.cpu_physical_cores })})` : "")],
-      ["gpu", n.gpu_name], ["memory", n.mem_total && bytes(n.mem_total)], ["swap", n.swap_total && bytes(n.swap_total)],
+      ["gpu", /^(none|n\/a|unknown|-)?$/i.test(String(n.gpu_name || "").trim()) ? "" : n.gpu_name], ["memory", n.mem_total && bytes(n.mem_total)], ["swap", n.swap_total && bytes(n.swap_total)],
       ["disk", n.disk_total && bytes(n.disk_total)], ["region", stripEmoji(n.region)], ["group", n.group],
       ["tags", String(n.tags || "").split(";").filter(Boolean).join(" ")],
       ["price", n.price > 0 ? `${n.currency || "$"}${n.price}${n.billing_cycle ? " / " + cycleName(n.billing_cycle) : ""}${n.auto_renewal ? tr("autorenew") : ""}` : ""],
@@ -256,12 +256,12 @@ export function createDetail(app) {
 
   function head(n, r) {
     const on = r && app.live().online.has(n.uuid);
-    return `<div class="dhead"><span class="${on ? "g" : "r"}">●</span> ${on ? tr("up", { t: uptime(r.uptime) }) : tr("offline")}` +
-      `<span class="d">  ${esc([stripEmoji(n.region), n.group].filter(Boolean).join(" · "))}</span></div>`;
+    return `<div class="dhead"><span class="${on ? "g" : "r"}">●</span> ${txt(on ? tr("up", { t: uptime(r.uptime) }) : tr("offline"))}` +
+      `<span class="d">  ${txt([stripEmoji(n.region), n.group].filter(Boolean).join(" · "))}</span></div>`;
   }
 
   function tabs() {
-    const t = (id, key, label) => `<span class="tab${st.tab === id ? " on" : ""}" data-tab="${id}"> ${key} ${label} </span>`;
+    const t = (id, key, label) => `<span class="tab${st.tab === id ? " on" : ""}" data-tab="${id}"> ${key} ${txt(label)} </span>`;
     const rs = ranges().map((r, i) => `<span class="tab${i === Math.min(st.ri, ranges().length - 1) ? " on" : ""}" data-range="${i}"> ${r[1]} </span>`).join("");
     return `<div class="ln tabs">${t("overview", "o", tr("tab.overview"))}${t("ping", "p", tr("tab.ping"))}<span class="sp"></span>${rs}</div>`;
   }

@@ -1,4 +1,4 @@
-import { esc, wcw, clip, stripEmoji, bytes, uptime, pct, graph, meter, box } from "./util.js";
+import { esc, txt, wcw, clip, stripEmoji, bytes, uptime, pct, graph, meter, box } from "./util.js";
 import { getJSON } from "./api.js";
 import { createDetail } from "./detail.js";
 import { t as tr, getLang, setLang, onLang, detect } from "./i18n.js";
@@ -122,8 +122,8 @@ function summary() {
     const r = live.data[n.uuid];
     if (r && live.online.has(n.uuid)) { up += r.network.up; down += r.network.down; cpu += r.cpu.usage; k++; }
   }
-  $("summary").innerHTML = `<span class="${k ? "g" : "r"}">●</span> <b>${k}</b>/${nodes.length} ${tr("online")}` +
-    `   <span class="u">↑ ${bytes(up)}/s</span>  <span class="n">↓ ${bytes(down)}/s</span>` + (k ? `   <span class="d">${tr("cpuavg")}</span> ${(cpu / k).toFixed(0)}%` : "");
+  $("summary").innerHTML = `<span class="${k ? "g" : "r"}">●</span> <b>${k}</b>/${nodes.length} ${txt(tr("online"))}` +
+    `   <span class="u">↑ ${bytes(up)}/s</span>  <span class="n">↓ ${bytes(down)}/s</span>` + (k ? `   <span class="d">${txt(tr("cpuavg"))}</span> ${(cpu / k).toFixed(0)}%` : "");
 }
 
 function render() {
@@ -151,7 +151,7 @@ function setupGroups() {
   const groups = [...new Set(nodes.map((n) => n.group).filter(Boolean))];
   if (settings.show_group === false || groups.length === 0) { box.hidden = true; return; }
   box.hidden = false;
-  box.innerHTML = ["", ...groups].map((g) => `<button class="chip${g === group ? " on" : ""}" data-g="${esc(g)}">${g ? esc(g) : tr("all")}</button>`).join("");
+  box.innerHTML = ["", ...groups].map((g) => `<button class="chip${g === group ? " on" : ""}" data-g="${esc(g)}">${txt(g || tr("all"))}</button>`).join("");
 }
 $("chips").addEventListener("click", (e) => {
   const b = e.target.closest(".chip");

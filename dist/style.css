@@ -1,9 +1,8 @@
-/* Chinese glyphs must be exactly two cells wide (2 x 0.6em = 1.2em) to line up in the text boxes. */
+/* Preferred CJK fonts. Alignment does not depend on their width: wide characters sit in .cj boxes. */
 @font-face {
   font-family: "cjk-fit";
   src: local("Noto Sans Mono CJK SC"), local("Noto Sans CJK SC"), local("Source Han Sans SC"), local("Source Han Sans CN"),
     local("PingFang SC"), local("Microsoft YaHei"), local("WenQuanYi Micro Hei"), local("Noto Sans CJK JP"), local("Noto Sans CJK HK");
-  size-adjust: 120%;
   unicode-range: U+2E80-9FFF, U+AC00-D7AF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF, U+3000-303F;
 }
 :root {
@@ -98,3 +97,6 @@ body { padding-bottom: 34px; }
 .tabs .tab.on { background: var(--accent); color: var(--background); }
 .tabs .sp { flex: 1; }
 .dhead { height: 19px; line-height: 19px; padding-left: 1ch; margin-top: 4px; white-space: pre; }
+
+/* every wide character occupies exactly two cells, centered, whatever its glyph advance is */
+.cj { display: inline-block; width: 2ch; text-align: center; }

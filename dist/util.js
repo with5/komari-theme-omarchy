@@ -9,6 +9,10 @@ export const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&a
 const wide = (c) => (c >= 0x1100 && c <= 0x115f) || (c >= 0x2e80 && c <= 0xa4cf) || (c >= 0xac00 && c <= 0xd7a3) ||
   (c >= 0xf900 && c <= 0xfaff) || (c >= 0xfe30 && c <= 0xfe6f) || (c >= 0xff00 && c <= 0xff60) || (c >= 0xffe0 && c <= 0xffe6);
 export const wcw = (s) => { let w = 0; for (const ch of s) w += wide(ch.codePointAt(0)) ? 2 : 1; return w; };
+// Text for HTML content: escapes, and puts every wide character in a fixed two-cell box so
+// columns line up whatever font the browser falls back to for CJK glyphs.
+const WIDE_RE = /[\u1100-\u115f\u2e80-\ua4cf\uac00-\ud7a3\uf900-\ufaff\ufe30-\ufe6f\uff00-\uff60\uffe0-\uffe6]/g;
+export const txt = (s) => esc(s).replace(WIDE_RE, '<span class="cj">$&</span>');
 export const clip = (s, n) => {
   if (n <= 0) return "";
   if (wcw(s) <= n) return s;
@@ -99,13 +103,13 @@ export function box(I) {
   const E = (html, k = "") => `<div class="ln ${k}">${html}</div>`;
   const row = (segs) => {
     let w = 0, out = "";
-    for (const [c, t] of segs) { w += wcw(t); out += c ? `<span class="${c}">${esc(t)}</span>` : esc(t); }
+    for (const [c, t] of segs) { w += wcw(t); out += c ? `<span class="${c}">${txt(t)}</span>` : txt(t); }
     return `<div class="ln s"> ${out}${" ".repeat(Math.max(0, I - w))} </div>`;
   };
   const top = (title, right = "", cls = "w") => {
     title = clip(title, I - 2 - wcw(right));
-    return E(B("┌─") + `<span class="${cls}">${esc(title)}</span>` + B("─".repeat(Math.max(0, I - 2 - wcw(title) - wcw(right)))) +
-      `<span class="d">${esc(right)}</span>` + B("─┐"), "t");
+    return E(B("┌─") + `<span class="${cls}">${txt(title)}</span>` + B("─".repeat(Math.max(0, I - 2 - wcw(title) - wcw(right)))) +
+      `<span class="d">${txt(right)}</span>` + B("─┐"), "t");
   };
   const sep = () => E(B("├" + "─".repeat(I) + "┤"), "s");
   const bottom = (tag = "") => E(B("└" + "─".repeat(I - wcw(tag) - 1)) + `<span class="d">${esc(tag)}</span>` + B("─┘"), "u");
