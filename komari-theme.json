@@ -1,0 +1,97 @@
+{
+  "name": {
+    "en": "Omarchy",
+    "zh-CN": "Omarchy"
+  },
+  "short": "omarchy",
+  "description": {
+    "en": "Omarchy-style terminal UI: ASCII banner effects, btop-like meters and graphs.",
+    "zh-CN": "Omarchy 风格终端界面：ASCII 横幅动画、btop 风格的仪表与曲线。"
+  },
+  "version": "0.2.0",
+  "author": "with5",
+  "url": "",
+  "preview": "preview.png",
+  "configuration": {
+    "type": "managed",
+    "name": {
+      "en": "Omarchy settings",
+      "zh-CN": "Omarchy 设置"
+    },
+    "data": [
+      {
+        "key": "palette_dark",
+        "name": {
+          "en": "Default palette (dark)",
+          "zh-CN": "默认调色板（暗色）"
+        },
+        "required": false,
+        "type": "select",
+        "options": "catppuccin,catppuccin-latte,ethereal,everforest,flexoki-light,gruvbox,hackerman,kanagawa,last-horizon,lumon,lupine,matte-black,miasma,nord,osaka-jade,retro-82,ristretto,rose-pine,solitude,starship,tokyo-night,vantablack,white",
+        "default": "tokyo-night"
+      },
+      {
+        "key": "palette_light",
+        "name": {
+          "en": "Default palette (light)",
+          "zh-CN": "默认调色板（亮色）"
+        },
+        "required": false,
+        "type": "select",
+        "options": "catppuccin,catppuccin-latte,ethereal,everforest,flexoki-light,gruvbox,hackerman,kanagawa,last-horizon,lumon,lupine,matte-black,miasma,nord,osaka-jade,retro-82,ristretto,rose-pine,solitude,starship,tokyo-night,vantablack,white",
+        "default": "catppuccin-latte"
+      },
+      {
+        "key": "allow_switch",
+        "name": {
+          "en": "Let visitors switch palette",
+          "zh-CN": "允许访客切换调色板"
+        },
+        "required": false,
+        "type": "switch",
+        "default": true
+      },
+      {
+        "key": "show_group",
+        "name": {
+          "en": "Show group filter",
+          "zh-CN": "显示分组筛选"
+        },
+        "required": false,
+        "type": "switch",
+        "default": true
+      },
+      {
+        "key": "banner",
+        "name": {
+          "en": "Banner text (default: site name)",
+          "zh-CN": "横幅文字（默认站点名）"
+        },
+        "required": false,
+        "type": "string",
+        "default": ""
+      },
+      {
+        "key": "intro",
+        "name": {
+          "en": "Intro effect",
+          "zh-CN": "开场动画"
+        },
+        "required": false,
+        "type": "select",
+        "options": "random,decrypt,rain,beams,scatter,burn,off",
+        "default": "random"
+      },
+      {
+        "key": "screensaver",
+        "name": {
+          "en": "Screensaver after 90s idle",
+          "zh-CN": "空闲 90 秒后启用屏保"
+        },
+        "required": false,
+        "type": "switch",
+        "default": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Komari Monitor</title>
+<meta name="description" content="A simple server monitor tool.">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="top">
+  <canvas id="banner" role="img" aria-label="site name" title="click to replay"></canvas>
+  <div class="stats" id="summary"></div>
+</header>
+<nav class="ctl">
+  <span id="chips" hidden></span>
+  <span class="spacer"></span>
+  <select id="palette" class="sel" hidden aria-label="palette"></select>
+</nav>
+<h2 class="rule">nodes</h2>
+<main id="grid" class="grid"></main>
+<p id="empty" class="empty" hidden>no nodes</p>
+<footer class="status" id="status">
+  <span class="mode">NORMAL</span>
+  <span class="flt" id="st-flt"></span>
+  <span class="nm" id="st-name"></span>
+  <span class="spacer"></span>
+  <span id="st-pos">0/0</span>
+  <span class="pal" id="st-pal"></span>
+  <button class="hk" id="st-help" title="help">? help</button>
+  <label class="cmd" id="cmd" hidden>/<input id="cmd-in" autocomplete="off" spellcheck="false" aria-label="search"></label>
+</footer>
+<pre id="help" class="help" hidden>
+ keys
+ ─────────────────────────────────────────
+ h j k l  ←↓↑→     move between nodes
+ gg  G             first / last node
+ 0  $              start / end of row
+ 3j  5G            number prefix repeats
+ Enter             go in (expand node)
+ u  Esc            back: collapse, clear
+                   search, clear group
+ /                 search by name
+ H  L              previous / next group
+ t  T              next / prev palette
+ r                 replay banner effect
+ s                 screensaver
+ ?                 this help
+
+ press ? u or Esc to close
+</pre>
+<div id="saver"><canvas id="saver-cv"></canvas></div>
+<script src="./palettes.js"></script>
+<script src="./fx.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
