@@ -8,9 +8,9 @@
     "en": "Omarchy-style terminal UI: ASCII banner effects, btop-like meters and graphs.",
     "zh-CN": "Omarchy 风格终端界面：ASCII 横幅动画、btop 风格的仪表与曲线。"
   },
-  "version": "0.3.0",
+  "version": "1.0.0",
   "author": "with5",
-  "url": "",
+  "url": "https://github.com/with5/komari-theme-omarchy",
   "preview": "preview.png",
   "configuration": {
     "type": "managed",
