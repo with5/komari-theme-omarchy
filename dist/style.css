@@ -34,7 +34,7 @@ body {
 }
 .card { --bc: var(--muted); margin: 0; cursor: pointer; overflow: hidden; outline: none; color: var(--foreground); }
 .card:hover, .card:focus-visible, .card.open { --bc: var(--accent); }
-.card .b { color: var(--bc); }
+.b { color: var(--bc, var(--muted)); }
 .ln { height: 19px; line-height: 19px; white-space: pre; }
 /* side borders are drawn by CSS so they stay continuous, centered on the edge cells like box glyphs */
 .ln.s {
@@ -78,3 +78,15 @@ body { padding-bottom: 34px; }
 .help[hidden] { display: none; }
 #saver { position: fixed; inset: 0; background: #000; display: none; align-items: center; justify-content: center; z-index: 10; cursor: none; }
 @media (max-width: 480px) { .status .nm, .status .pal { display: none; } }
+
+/* detail page */
+.detail { --bc: var(--muted); width: calc(var(--dw, 90) * 1ch); max-width: 100%; margin: 6px auto 0; padding-bottom: 8px; }
+.detail .ln.t { margin-top: 10px; }
+.detail .blk { --bc: var(--muted); }
+.detail .blk.cur { --bc: var(--accent); }
+.tabs { display: flex; gap: 10px; align-items: center; }
+.tabs .tab { cursor: pointer; color: var(--dark-foreground); }
+.tabs .tab:hover { color: var(--foreground); }
+.tabs .tab.on { background: var(--accent); color: var(--background); }
+.tabs .sp { flex: 1; }
+.dhead { height: 19px; line-height: 19px; padding-left: 1ch; margin-top: 4px; white-space: pre; }

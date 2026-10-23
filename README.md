@@ -12,9 +12,11 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 - Screensaver after 90 s idle, looping the same effects on black
 - btop-style cards: gradient meters and braille history graphs for CPU and network
 - 23 Omarchy palettes; follows light/dark by default, visitors can switch, admins set the defaults
+- Node detail page (`Enter` on a node): machine config, live resources with history graphs, and ping latency
+- Ping view per task: latency graph, loss markers, avg/min/max, p50/p95/p99, jitter; switchable time range
 - Vim-style keyboard navigation
-- No dependencies, no build step, about 45 KB in total
-- Public-safe: no processes, IPs, kernel versions or remarks are shown
+- No dependencies, no build step, about 70 KB in total (plain ES modules)
+- Public-safe: no processes, IPs or private remarks are shown; only fields Komari already exposes publicly
 
 ## Install
 
@@ -29,14 +31,27 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 | `gg` `G` | first / last node |
 | `0` `$` | start / end of row |
 | `3j` `5G` | number prefix repeats the motion |
-| `Enter` | go in (expand) |
-| `u` `Esc` | back: collapse, clear search, clear group |
+| `Enter` | open node detail |
+| `u` `Esc` | back: clear search, clear group |
 | `/` | search by name or group |
 | `H` `L` | previous / next group |
 | `t` `T` | next / previous palette |
 | `r` | replay banner effect |
 | `s` | screensaver |
 | `?` | help |
+
+### In the detail page
+
+| Key | Action |
+| --- | --- |
+| `h` `l` / `[` `]` | previous / next time range (1h, 6h, 24h, 7d, 30d; limited by the server's retention) |
+| `o` / `p` / `Tab` | overview / ping / switch |
+| `j` `k` | ping: select a task; overview: scroll |
+| `Enter` | ping: zoom into the selected task |
+| `u` `Esc` | back: unzoom, then to the node list |
+| `R` | refresh now |
+
+The detail page lives at `#/node/<uuid>`, so the browser back button and links work.
 
 ## Settings
 
