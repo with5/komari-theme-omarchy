@@ -1,5 +1,13 @@
+/* Chinese glyphs must be exactly two cells wide (2 x 0.6em = 1.2em) to line up in the text boxes. */
+@font-face {
+  font-family: "cjk-fit";
+  src: local("Noto Sans Mono CJK SC"), local("Noto Sans CJK SC"), local("Source Han Sans SC"), local("Source Han Sans CN"),
+    local("PingFang SC"), local("Microsoft YaHei"), local("WenQuanYi Micro Hei"), local("Noto Sans CJK JP"), local("Noto Sans CJK HK");
+  size-adjust: 120%;
+  unicode-range: U+2E80-9FFF, U+AC00-D7AF, U+F900-FAFF, U+FE30-FE4F, U+FF00-FFEF, U+3000-303F;
+}
 :root {
-  --font: "JetBrainsMono Nerd Font", "JetBrains Mono", ui-monospace, "Liberation Mono", monospace;
+  --font: "JetBrainsMono Nerd Font", "JetBrains Mono", "cjk-fit", ui-monospace, "Liberation Mono", monospace;
 }
 * { box-sizing: border-box; border-radius: 0; }
 html, body { margin: 0; }

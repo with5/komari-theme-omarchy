@@ -8,7 +8,7 @@
     "en": "Omarchy-style terminal UI: ASCII banner effects, btop-like meters and graphs.",
     "zh-CN": "Omarchy 风格终端界面：ASCII 横幅动画、btop 风格的仪表与曲线。"
   },
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "with5",
   "url": "",
   "preview": "preview.png",
@@ -19,6 +19,17 @@
       "zh-CN": "Omarchy 设置"
     },
     "data": [
+      {
+        "key": "language",
+        "name": {
+          "en": "Default language",
+          "zh-CN": "默认语言"
+        },
+        "required": false,
+        "type": "select",
+        "options": "auto,en,zh",
+        "default": "auto"
+      },
       {
         "key": "palette_dark",
         "name": {

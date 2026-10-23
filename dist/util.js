@@ -1,3 +1,5 @@
+import { t } from "./i18n.js";
+
 // Text helpers shared by the node list and the detail page.
 // The UI is a grid of monospace cells, so everything here counts cells, not pixels.
 
@@ -26,8 +28,11 @@ export const bytes = (n) => {
 export const uptime = (s) => {
   s = Number(s) || 0;
   const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
-  return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+  const [D, H, M] = [t("dur.d"), t("dur.h"), t("dur.m")];
+  return d ? `${d}${D} ${h}${H}` : h ? `${h}${H} ${m}${M}` : `${m}${M}`;
 };
+export const padR = (s, n) => s + " ".repeat(Math.max(0, n - wcw(s)));
+export const padL = (s, n) => " ".repeat(Math.max(0, n - wcw(s))) + s;
 export const pct = (used, total) => (total > 0 ? Math.min(100, (used / total) * 100) : 0);
 export const ms = (v) => (v == null ? "-" : v >= 100 ? `${Math.round(v)}ms` : `${v.toFixed(v < 10 ? 1 : 0)}ms`);
 

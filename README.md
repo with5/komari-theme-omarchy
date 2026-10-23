@@ -14,8 +14,9 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 - 23 Omarchy palettes; follows light/dark by default, visitors can switch, admins set the defaults
 - Node detail page (`Enter` on a node): machine config, live resources with history graphs, and ping latency
 - Ping view per task: latency graph, loss markers, avg/min/max, p50/p95/p99, jitter; switchable time range
+- English / Chinese UI. The language is chosen from: the visitor's saved choice, the admin default, Komari's `language` cookie, then the browser language. Press `i` or click the language button to switch
 - Vim-style keyboard navigation
-- No dependencies, no build step, about 70 KB in total (plain ES modules)
+- No dependencies, no build step, about 80 KB in total (plain ES modules)
 - Public-safe: no processes, IPs or private remarks are shown; only fields Komari already exposes publicly
 
 ## Install
@@ -38,6 +39,7 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 | `t` `T` | next / previous palette |
 | `r` | replay banner effect |
 | `s` | screensaver |
+| `i` | switch language (English / 中文) |
 | `?` | help |
 
 ### In the detail page
@@ -55,7 +57,11 @@ The detail page lives at `#/node/<uuid>`, so the browser back button and links w
 
 ## Settings
 
-Configurable in the admin panel: default dark and light palette, whether visitors may switch palettes, group filter, banner text, intro effect, and the screensaver.
+Configurable in the admin panel: default language, default dark and light palette, whether visitors may switch palettes, group filter, banner text, intro effect, and the screensaver.
+
+## Chinese text and fonts
+
+The cards are drawn with text, so Chinese characters must be exactly two cells wide. `style.css` declares a `cjk-fit` font that scales a locally installed CJK font (Noto Sans CJK, Source Han Sans, PingFang SC, Microsoft YaHei, WenQuanYi) by 120% to fit. If none of them is installed, Chinese still shows but the box edges may be slightly misaligned.
 
 ## Palettes
 

@@ -1,6 +1,7 @@
 import { esc, wcw, clip, stripEmoji, bytes, uptime, pct, graph, meter, box } from "./util.js";
 import { getJSON } from "./api.js";
-import { createDetail, HELP as HELP_DETAIL } from "./detail.js";
+import { createDetail } from "./detail.js";
+import { t as tr, getLang, setLang, onLang, detect } from "./i18n.js";
 
 const $ = (id) => document.getElementById(id);
 const PALETTES = window.OMARCHY_PALETTES || {};
@@ -58,7 +59,7 @@ const currentPalette = () => chosenPalette() || adminDefault();
 function setupPaletteSelect() {
   const sel = $("palette");
   if (settings.allow_switch === false) { sel.hidden = true; return; }
-  sel.innerHTML = '<option value="">auto</option>' + paletteNames().map((n) => `<option value="${n}">${n}</option>`).join("");
+  sel.innerHTML = `<option value="">${tr("auto")}</option>` + paletteNames().map((n) => `<option value="${n}">${n}</option>`).join("");
   sel.value = chosenPalette() || "";
   sel.hidden = false;
   sel.onchange = () => { store.set(sel.value); applyPalette(currentPalette()); status(); };
@@ -77,7 +78,7 @@ function cardHTML(n, i) {
   const right = n.group ? ` ${clip(n.group, 12)} ` : "";
   L.push(b.top(` ${String(i + 1).padStart(2, "0")} ${n.name} `, right));
 
-  const state = on ? ` up ${uptime(r.uptime)}` : " offline";
+  const state = on ? ` ${tr("up", { t: uptime(r.uptime) })}` : ` ${tr("offline")}`;
   const sub = [stripEmoji(n.region), n.os].filter(Boolean).join(" · ");
   const rem = I - 2 - wcw(state) - 3;
   L.push(b.row([["", " "], [on ? "g" : "r", "●"], ["", state], ...(rem > 6 && sub ? [["d", " · " + clip(sub, rem)]] : [])]));
@@ -121,8 +122,8 @@ function summary() {
     const r = live.data[n.uuid];
     if (r && live.online.has(n.uuid)) { up += r.network.up; down += r.network.down; cpu += r.cpu.usage; k++; }
   }
-  $("summary").innerHTML = `<span class="${k ? "g" : "r"}">●</span> <b>${k}</b>/${nodes.length} online` +
-    `   <span class="u">↑ ${bytes(up)}/s</span>  <span class="n">↓ ${bytes(down)}/s</span>` + (k ? `   <span class="d">cpu avg</span> ${(cpu / k).toFixed(0)}%` : "");
+  $("summary").innerHTML = `<span class="${k ? "g" : "r"}">●</span> <b>${k}</b>/${nodes.length} ${tr("online")}` +
+    `   <span class="u">↑ ${bytes(up)}/s</span>  <span class="n">↓ ${bytes(down)}/s</span>` + (k ? `   <span class="d">${tr("cpuavg")}</span> ${(cpu / k).toFixed(0)}%` : "");
 }
 
 function render() {
@@ -150,7 +151,7 @@ function setupGroups() {
   const groups = [...new Set(nodes.map((n) => n.group).filter(Boolean))];
   if (settings.show_group === false || groups.length === 0) { box.hidden = true; return; }
   box.hidden = false;
-  box.innerHTML = ["", ...groups].map((g) => `<button class="chip${g === group ? " on" : ""}" data-g="${esc(g)}">${g ? esc(g) : "all"}</button>`).join("");
+  box.innerHTML = ["", ...groups].map((g) => `<button class="chip${g === group ? " on" : ""}" data-g="${esc(g)}">${g ? esc(g) : tr("all")}</button>`).join("");
 }
 $("chips").addEventListener("click", (e) => {
   const b = e.target.closest(".chip");
@@ -262,24 +263,7 @@ addEventListener("hashchange", route);
 const help = $("help"), cmd = $("cmd"), cmdIn = $("cmd-in");
 let count = "", pendingG = 0;
 
-const HELP_LIST = ` keys
- ─────────────────────────────────────────
- h j k l  ←↓↑→     move between nodes
- gg  G             first / last node
- 0  $              start / end of row
- 3j  5G            number prefix repeats
- Enter             open node detail
- u  Esc            back: clear search,
-                   clear group
- /                 search by name
- H  L              previous / next group
- t  T              next / prev palette
- r                 replay banner effect
- s                 screensaver
- ?                 this help
-
- press ? u or Esc to close`;
-function openHelp() { help.textContent = detail.active() ? HELP_DETAIL : HELP_LIST; help.hidden = false; }
+function openHelp() { help.textContent = tr(detail.active() ? "help.detail" : "help.list"); help.hidden = false; }
 
 function status() {
   let mode = "NORMAL", name = "", pos = "", flt = "";
@@ -364,6 +348,7 @@ addEventListener("keydown", (e) => {
   if (!help.hidden) { if (k === "?" || k === "u" || k === "Escape" || k === "q") { help.hidden = true; e.preventDefault(); } return; }
   // keys that work on every page
   if (k === "?") { openHelp(); e.preventDefault(); return; }
+  if (k === "i") { toggleLang(); e.preventDefault(); return; }
   if (k === "t") { stepPalette(1); status(); e.preventDefault(); return; }
   if (k === "T") { stepPalette(-1); status(); e.preventDefault(); return; }
   if (k === "s") { startSaver(); e.preventDefault(); return; }
@@ -396,6 +381,25 @@ addEventListener("keydown", (e) => {
   status();
 });
 $("st-help").addEventListener("click", openHelp);
+$("st-lang").addEventListener("click", toggleLang);
+
+// ---- language ----
+function applyStatic() {
+  document.querySelectorAll("[data-i18n]").forEach((e) => { e.textContent = tr(e.dataset.i18n); });
+  $("st-lang").textContent = tr("lang.label");
+  $("cmd-in").placeholder = tr("search");
+}
+function toggleLang() { setLang(getLang() === "zh" ? "en" : "zh"); }
+onLang(() => {
+  applyStatic();
+  setupPaletteSelect();
+  setupGroups();
+  lastSig = "";
+  for (const el of els.values()) el._h = null;
+  if (detail.active()) detail.layout();
+  else render();
+  status();
+});
 help.addEventListener("click", () => { help.hidden = true; });
 
 // ---- live data ----
@@ -427,6 +431,8 @@ document.addEventListener("visibilitychange", () => {
 // ---- boot ----
 banner = new OFX.Banner($("banner"), color);
 applyPalette("tokyo-night");
+setLang(detect(""), false);
+applyStatic();
 let rz;
 addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(layout, 120); });
 Promise.all([getJSON("/api/public").catch(() => ({})), getJSON("/api/nodes").catch(() => [])]).then(([pub, list]) => {
@@ -434,6 +440,8 @@ Promise.all([getJSON("/api/public").catch(() => ({})), getJSON("/api/nodes").cat
   settings = site.theme_settings || {};
   if (site.sitename) { siteName = site.sitename; document.title = site.sitename; }
   nodes = Array.isArray(list) ? list : [];
+  const lg = detect(settings.language);
+  if (lg !== getLang()) setLang(lg, false);
   applyPalette(currentPalette());
   setupPaletteSelect();
   setupGroups();

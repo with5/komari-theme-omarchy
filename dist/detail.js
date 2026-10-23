@@ -1,28 +1,11 @@
 // Node detail page: machine config, resource history, and ping latency.
 // Reached with Enter from the list (#/node/<uuid>). All drawing is text, like the cards.
-import { esc, wcw, clip, stripEmoji, bytes, uptime, pct, ms, graph, bucketize, meter, box } from "./util.js";
+import { esc, wcw, clip, stripEmoji, bytes, uptime, pct, ms, graph, bucketize, meter, box, padL } from "./util.js";
+import { t as tr } from "./i18n.js";
 import { pingRecords, loadRecords, invalidate } from "./api.js";
 
 const RANGES = [[1, "1h"], [6, "6h"], [24, "24h"], [168, "7d"], [720, "30d"]];
 const $ = (id) => document.getElementById(id);
-
-export const HELP = ` detail
- ─────────────────────────────────────────
- h l  [ ]  ← →     previous / next time range
- o                 overview: config, resources
- p                 ping: latency per task
- Tab               switch overview / ping
- j k  ↓ ↑          ping: select task / scroll
- gg  G             top / bottom
- Enter             ping: zoom into a task
- u  Esc            back: unzoom, then node list
- R                 refresh now
- r                 replay banner effect
- t  T              next / prev palette
- s                 screensaver
- ?                 this help
-
- press ? u or Esc to close`;
 
 export function createDetail(app) {
   const st = { uuid: null, tab: "overview", ri: 0, sel: 0, zoom: null };
@@ -117,8 +100,8 @@ export function createDetail(app) {
     return b.row(segs);
   };
   const axis = (b, gw) => {
-    const left = `-${rangeLabel()}`, right = "now";
-    return b.row([["", " "], ["d", `${left} ${"─".repeat(Math.max(0, gw - left.length - right.length - 2))} ${right}`]]);
+    const left = `-${rangeLabel()}`, right = tr("now");
+    return b.row([["", " "], ["d", `${left} ${"─".repeat(Math.max(0, gw - wcw(left) - wcw(right) - 2))} ${right}`]]);
   };
   const padTo = (s, n) => s + " ".repeat(Math.max(0, n - wcw(s)));
   const dotClass = (t) => (t.last == null ? "d" : t.last < 0 ? "r" : t.last > 300 ? "y" : "g");
@@ -139,25 +122,25 @@ export function createDetail(app) {
 
   // ---- sections ----
   function configBox(I, n, r) {
-    const b = box(I), L = [b.top(" config ")];
-    const cycle = { 30: "month", 90: "quarter", 180: "half-year", 365: "year" };
+    const b = box(I), L = [b.top(tr("sec.config"))];
+    const cycleName = (d) => { const k = "cycle." + d, v = tr(k); return v === k ? tr("cycle.n", { n: d }) : v; };
     const exp = n.expired_at && new Date(n.expired_at).getFullYear() > 2000 ? new Date(n.expired_at) : null;
     const days = exp ? Math.ceil((exp - Date.now()) / 86400e3) : null;
     const cores = n.cpu_cores || (r && r.cpu.cores);
     const items = [
       ["os", n.os], ["arch", n.arch || (r && r.cpu.arch)], ["virt", n.virtualization], ["kernel", n.kernel_version],
-      ["cpu", [n.cpu_name || (r && r.cpu.name), cores && `×${cores}`].filter(Boolean).join(" ") + (n.cpu_physical_cores ? ` (${n.cpu_physical_cores} physical)` : "")],
+      ["cpu", [n.cpu_name || (r && r.cpu.name), cores && `×${cores}`].filter(Boolean).join(" ") + (n.cpu_physical_cores ? ` (${tr("physical", { n: n.cpu_physical_cores })})` : "")],
       ["gpu", n.gpu_name], ["memory", n.mem_total && bytes(n.mem_total)], ["swap", n.swap_total && bytes(n.swap_total)],
       ["disk", n.disk_total && bytes(n.disk_total)], ["region", stripEmoji(n.region)], ["group", n.group],
       ["tags", String(n.tags || "").split(";").filter(Boolean).join(" ")],
-      ["price", n.price > 0 ? `${n.currency || "$"}${n.price}${n.billing_cycle ? " / " + (cycle[n.billing_cycle] || n.billing_cycle + "d") : ""}${n.auto_renewal ? " (auto)" : ""}` : ""],
-      ["expires", exp ? `${exp.toISOString().slice(0, 10)} (${days >= 0 ? days + "d left" : "expired"})` : ""],
+      ["price", n.price > 0 ? `${n.currency || "$"}${n.price}${n.billing_cycle ? " / " + cycleName(n.billing_cycle) : ""}${n.auto_renewal ? tr("autorenew") : ""}` : ""],
+      ["expires", exp ? `${exp.toISOString().slice(0, 10)} (${days >= 0 ? tr("left", { n: days }) : tr("expired")})` : ""],
       ["traffic", n.traffic_limit > 0 ? `${bytes(n.traffic_limit)} ${n.traffic_limit_type || ""}` : ""],
       ["note", n.public_remark],
     ].filter(([, v]) => v);
     const two = I >= 72, colW = Math.floor((I - 1) / 2);
     for (let i = 0; i < items.length; i += two ? 2 : 1) {
-      const cell = ([k, v], w) => [["d", padTo(k, 8)], ["", padTo(clip(String(v), w - 9), w - 8)]];
+      const cell = ([k, v], w) => [["d", padTo(tr("k." + k), 8)], ["", padTo(clip(String(v), w - 9), w - 8)]];
       L.push(b.row([["", " "], ...cell(items[i], two ? colW : I - 2), ...(two && items[i + 1] ? cell(items[i + 1], colW) : [])]));
     }
     L.push(b.bottom());
@@ -165,13 +148,13 @@ export function createDetail(app) {
   }
 
   function resourcesBox(I, n, r) {
-    const b = box(I), gw = I - 2, L = [b.top(" resources ", ` ${rangeLabel()} `)];
+    const b = box(I), gw = I - 2, L = [b.top(tr("sec.res"), ` ${rangeLabel()} `)];
     const R = Math.min(26, Math.max(14, Math.floor(I * 0.3))), bl = Math.max(6, I - 6 - R - 1);
     const mrow = (label, p, right) => b.row([["d", ` ${label.padEnd(4)} `], ...meter(p / 100, bl), ["w", " " + clip(right, R)]]);
     const on = r && app.live().online.has(n.uuid);
     const ls = slots.load, lm = loadModel(gw);
     const hasHist = lm && lm.count > 0;
-    const fmt = (s, f) => (s ? `avg ${f(s.avg)}  max ${f(s.max)}  min ${f(s.min)}` : "");
+    const fmt = (s, f) => (s ? tr("stats", { a: f(s.avg), x: f(s.max), n: f(s.min) }) : "");
     const blockStats = (s, f) => { const t = fmt(s, f); if (t) L.push(note(b, t)); };
 
     const cpu = on ? r.cpu.usage : 0, mem = on ? pct(r.ram.used, n.mem_total || r.ram.total) : 0;
@@ -184,7 +167,7 @@ export function createDetail(app) {
     L.push(mrow("disk", on ? pct(r.disk.used, n.disk_total || r.disk.total) : 0, on ? `${pct(r.disk.used, n.disk_total || r.disk.total).toFixed(1)}%  ${bytes(r.disk.used)}/${bytes(n.disk_total || r.disk.total)}` : "-"));
 
     const net = (arrow, cls, bps, total, vals) => {
-      L.push(b.row([["d", ` ${arrow} `], [cls, on ? `${bytes(bps)}/s` : "-"], ["d", on ? `   total ${bytes(total)}` : ""]]));
+      L.push(b.row([["d", ` ${arrow} `], [cls, on ? `${bytes(bps)}/s` : "-"], ["d", on ? `   ${tr("total")} ${bytes(total)}` : ""]]));
       if (hasHist) {
         const mx = Math.max(1024, ...vals.filter((v) => v != null));
         for (const g of graph(vals, gw, 2, mx)) L.push(b.row([["", " "], [cls, g]]));
@@ -195,39 +178,38 @@ export function createDetail(app) {
     net("↓", "n", on ? r.network.down : 0, on ? r.network.totalDown : 0, lm ? lm.down : []);
 
     if (on) {
-      L.push(b.row([["d", " load "], ["w", `${r.load.load1.toFixed(2)} ${r.load.load5.toFixed(2)} ${r.load.load15.toFixed(2)}`], ["d", `   conn tcp ${r.connections.tcp} udp ${r.connections.udp}`]]));
+      L.push(b.row([["d", tr("load")], ["w", `${r.load.load1.toFixed(2)} ${r.load.load5.toFixed(2)} ${r.load.load15.toFixed(2)}`], ["d", `   ${tr("conn").trim()} tcp ${r.connections.tcp} udp ${r.connections.udp}`]]));
       if (hasHist) { const mx = Math.max(1, ...lm.load.filter((v) => v != null)); L.push(b.row([["", " "], ["y", graph(lm.load, gw, 1, mx)[0]]])); }
       for (const g of (r.gpu && r.gpu.detailed_info) || []) {
         L.push(b.row([["d", " gpu  "], ["", clip(g.name, I - 40)], ["w", `  ${g.utilization.toFixed(0)}%  ${bytes(g.memory_used)}/${bytes(g.memory_total)}  ${g.temperature}°C`]]));
       }
     }
     if (hasHist) {
-      const left = `-${rangeLabel()}`, right = "now";
-      L.push(b.row([["", " "], ["d", `${left} ${"─".repeat(Math.max(0, gw - left.length - right.length - 2))} ${right}`]]));
-    } else if (!ls || ls.loading) L.push(note(b, "loading history…"));
-    else if (ls.err) L.push(note(b, `history unavailable: ${ls.err}`, "r"));
-    else L.push(note(b, "no history recorded for this range"));
+      L.push(axis(b, gw));
+    } else if (!ls || ls.loading) L.push(note(b, tr("loading")));
+    else if (ls.err) L.push(note(b, tr("histErr", { e: ls.err }), "r"));
+    else L.push(note(b, tr("noHist")));
     L.push(b.bottom());
     return L.join("");
   }
   const cores = (n, r) => (n.cpu_cores || (r && r.cpu.cores) ? `  ${n.cpu_cores || r.cpu.cores}c` : "");
 
   function pingSummaryBox(I) {
-    const b = box(I), gw = I - 2 - 43 - 2, L = [b.top(" ping ", ` ${rangeLabel()} `)];
+    const b = box(I), gw = I - 2 - 43 - 2, L = [b.top(tr("sec.ping"), ` ${rangeLabel()} `)];
     const model = pingModel(Math.max(8, gw)), s = slots.ping;
     if (!model) {
-      L.push(note(b, !s || s.loading ? "loading…" : s.err ? `unavailable: ${s.err}` : "no ping data", s && s.err ? "r" : "d"));
-    } else if (!model.length) L.push(note(b, "no ping tasks for this node"));
+      L.push(note(b, !s || s.loading ? tr("loading") : s.err ? tr("unavailable", { e: s.err }) : tr("noPing"), s && s.err ? "r" : "d"));
+    } else if (!model.length) L.push(note(b, tr("noTasks")));
     else {
-      L.push(b.row([["d", `   ${"task".padEnd(16)} ${"last".padStart(7)} ${"avg".padStart(7)} ${"loss".padStart(6)}`]]));
+      L.push(b.row([["d", `   ${padTo(tr("h.task"), 16)} ${padL(tr("h.last"), 7)} ${padL(tr("h.avg"), 7)} ${padL(tr("h.loss"), 6)}`]]));
       for (const t of model) {
-        const lastTxt = t.last == null ? "-" : t.last < 0 ? "loss" : ms(t.last);
-        const segs = [["", " "], [dotClass(t), "●"], ["", " "], ["w", padTo(clip(t.name, 16), 16)], ["", " "], ["w", lastTxt.padStart(7)], ["", " "],
+        const lastTxt = t.last == null ? "-" : t.last < 0 ? tr("lossWord") : ms(t.last);
+        const segs = [["", " "], [dotClass(t), "●"], ["", " "], ["w", padTo(clip(t.name, 16), 16)], ["", " "], ["w", padL(lastTxt, 7)], ["", " "],
           ["", (t.total ? ms(t.avg) : "-").padStart(7)], ["", " "], [t.loss > 0 ? "y" : "d", (t.total ? `${(+t.loss).toFixed(1)}%` : "-").padStart(6)]];
         if (gw >= 8) segs.push(["", "  "], ["n", graph(t.vals, gw, 1, Math.max(5, t.top * 1.1))[0]]);
         L.push(b.row(segs));
       }
-      L.push(note(b, "p: full ping view"));
+      L.push(note(b, tr("pingHint")));
     }
     L.push(b.bottom());
     return L.join("");
@@ -235,10 +217,10 @@ export function createDetail(app) {
 
   function taskBlock(I, t, big) {
     const b = box(I), gw = I - 2, rows = big ? 8 : 4, L = [b.top(` ${t.name} `, ` ${t.type} · ${t.interval}s `)];
-    const lastTxt = t.last == null ? "-" : t.last < 0 ? "loss" : ms(t.last);
+    const lastTxt = t.last == null ? "-" : t.last < 0 ? tr("lossWord") : ms(t.last);
     const total = t.total || t.p.length;
-    L.push(pairsRow(b, [["last", lastTxt, t.last < 0 ? "r" : "w"], ["avg", total ? ms(t.avg) : "-"], ["min", total ? ms(t.min) : "-"], ["max", total ? ms(t.max) : "-"],
-      ["loss", total ? `${(+t.loss).toFixed(1)}%` : "-", t.loss > 0 ? "y" : "w"], ["n", total]]));
+    L.push(pairsRow(b, [[tr("s.last"), lastTxt, t.last < 0 ? "r" : "w"], [tr("s.avg"), total ? ms(t.avg) : "-"], [tr("s.min"), total ? ms(t.min) : "-"], [tr("s.max"), total ? ms(t.max) : "-"],
+      [tr("s.loss"), total ? `${(+t.loss).toFixed(1)}%` : "-", t.loss > 0 ? "y" : "w"], [tr("s.n"), total]]));
     if (big && t.valid.length) {
       const s = [...t.valid].sort((a, c) => a - c);
       const mean = s.reduce((a, c) => a + c, 0) / s.length;
@@ -246,23 +228,23 @@ export function createDetail(app) {
       const valids = t.p.filter((x) => x.v >= 0);
       let jit = 0;
       for (let i = 1; i < valids.length; i++) jit += Math.abs(valids[i].v - valids[i - 1].v);
-      L.push(pairsRow(b, [["p50", ms(quantile(s, 0.5))], ["p95", ms(quantile(s, 0.95))], ["p99", ms(quantile(s, 0.99))], ["stddev", ms(sd)], ["jitter", ms(valids.length > 1 ? jit / (valids.length - 1) : 0)]]));
+      L.push(pairsRow(b, [["p50", ms(quantile(s, 0.5))], ["p95", ms(quantile(s, 0.95))], ["p99", ms(quantile(s, 0.99))], [tr("stddev"), ms(sd)], [tr("jitter"), ms(valids.length > 1 ? jit / (valids.length - 1) : 0)]]));
     }
-    if (!t.valid.length) { L.push(note(b, t.p.length ? "all samples lost" : "no samples in this range", t.p.length ? "r" : "d")); L.push(b.bottom()); return L.join(""); }
+    if (!t.valid.length) { L.push(note(b, t.p.length ? tr("allLost") : tr("noSamples"), t.p.length ? "r" : "d")); L.push(b.bottom()); return L.join(""); }
     const top = Math.max(5, t.top * 1.1);
     for (const g of graph(t.vals, gw, rows, top)) L.push(b.row([["", " "], ["n", g]]));
     const ls = lossStrip(b, t, gw);
     if (ls) L.push(ls);
     L.push(axis(b, gw));
-    L.push(note(b, `scale 0–${ms(top)}${slots.ping && slots.ping.value && slots.ping.value.records.length >= 600 ? "  (sampled)" : ""}`));
+    L.push(note(b, tr("scale", { x: ms(top) }) + (slots.ping && slots.ping.value && slots.ping.value.records.length >= 600 ? "  " + tr("sampled") : "")));
     L.push(b.bottom());
     return L.join("");
   }
 
   function pingTab(I) {
     const model = pingModel(I - 2), s = slots.ping, b = box(I);
-    if (!model) return b.top(" ping ") + note(b, !s || s.loading ? "loading…" : s.err ? `unavailable: ${s.err}` : "no ping data", s && s.err ? "r" : "d") + b.bottom();
-    if (!model.length) return b.top(" ping ") + note(b, "no ping tasks for this node") + b.bottom();
+    if (!model) return b.top(tr("sec.ping")) + note(b, !s || s.loading ? tr("loading") : s.err ? tr("unavailable", { e: s.err }) : tr("noPing"), s && s.err ? "r" : "d") + b.bottom();
+    if (!model.length) return b.top(tr("sec.ping")) + note(b, tr("noTasks")) + b.bottom();
     st.sel = Math.min(st.sel, model.length - 1);
     if (st.zoom != null) {
       const t = model.find((x) => x.id === st.zoom);
@@ -274,14 +256,14 @@ export function createDetail(app) {
 
   function head(n, r) {
     const on = r && app.live().online.has(n.uuid);
-    return `<div class="dhead"><span class="${on ? "g" : "r"}">●</span> ${on ? `up ${uptime(r.uptime)}` : "offline"}` +
+    return `<div class="dhead"><span class="${on ? "g" : "r"}">●</span> ${on ? tr("up", { t: uptime(r.uptime) }) : tr("offline")}` +
       `<span class="d">  ${esc([stripEmoji(n.region), n.group].filter(Boolean).join(" · "))}</span></div>`;
   }
 
   function tabs() {
     const t = (id, key, label) => `<span class="tab${st.tab === id ? " on" : ""}" data-tab="${id}"> ${key} ${label} </span>`;
     const rs = ranges().map((r, i) => `<span class="tab${i === Math.min(st.ri, ranges().length - 1) ? " on" : ""}" data-range="${i}"> ${r[1]} </span>`).join("");
-    return `<div class="ln tabs">${t("overview", "o", "overview")}${t("ping", "p", "ping")}<span class="sp"></span>${rs}</div>`;
+    return `<div class="ln tabs">${t("overview", "o", tr("tab.overview"))}${t("ping", "p", tr("tab.ping"))}<span class="sp"></span>${rs}</div>`;
   }
 
   function render() {
