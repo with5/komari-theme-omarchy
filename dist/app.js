@@ -192,7 +192,7 @@ function layout() {
 // ---- banner + screensaver ----
 function linesFor(text) {
   text = (text || "komari").trim();
-  return OFX.bigText(text) || ["", " " + text.toUpperCase(), ""];
+  return OFX.bigText(text) || OFX.rasterText(text) || ["", " " + text.toUpperCase(), ""];
 }
 function setBanner(text, play, effect) {
   bannerText = text;
