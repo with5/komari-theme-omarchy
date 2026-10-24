@@ -9,7 +9,10 @@ const D = {
     online: "online", offline: "offline", up: "up {t}", cpuavg: "cpu avg", nodes: "nodes", nonodes: "no nodes",
     all: "all", auto: "auto", help: "? help", admin: "admin", search: "search",
     "dur.d": "d", "dur.h": "h", "dur.m": "m", now: "now",
-    "tab.overview": "overview", "tab.ping": "ping",
+    "tab.overview": "overview", "tab.ping": "ping", "tab.unlock": "unlock",
+    "ul.at": "probed {t}", "ul.legend": "● unlocked  ○ locked  v6 ipv6 only",
+    "ul.r.0": "global", "ul.r.11": "ai", "ul.r.1": "taiwan", "ul.r.2": "hong kong", "ul.r.3": "japan", "ul.r.4": "korea",
+    "ul.r.5": "north america", "ul.r.6": "south america", "ul.r.7": "europe", "ul.r.8": "africa", "ul.r.9": "southeast asia", "ul.r.10": "oceania",
     "sec.config": " config ", "sec.res": " resources ", "sec.ping": " ping ",
     "k.os": "os", "k.arch": "arch", "k.virt": "virt", "k.kernel": "kernel", "k.cpu": "cpu", "k.gpu": "gpu", "k.memory": "memory",
     "k.swap": "swap", "k.disk": "disk", "k.region": "region", "k.group": "group", "k.tags": "tags", "k.price": "price",
@@ -48,7 +51,9 @@ const D = {
  h l  [ ]  ← →     previous / next time range
  o                 overview: config, resources
  p                 ping: latency per task
- Tab               switch overview / ping
+ c                 unlock: streaming / AI (needs the
+                   unlock-test plugin)
+ Tab               switch tabs
  j k  ↓ ↑          ping: select task / scroll
  gg  G             top / bottom
  Enter             ping: zoom into a task
@@ -67,7 +72,10 @@ const D = {
     online: "在线", offline: "离线", up: "已运行 {t}", cpuavg: "CPU 均值", nodes: "节点", nonodes: "暂无节点",
     all: "全部", auto: "自动", help: "? 帮助", admin: "后台", search: "搜索",
     "dur.d": "天", "dur.h": "时", "dur.m": "分", now: "现在",
-    "tab.overview": "概览", "tab.ping": "延迟",
+    "tab.overview": "概览", "tab.ping": "延迟", "tab.unlock": "解锁",
+    "ul.at": "检测于 {t}", "ul.legend": "● 已解锁  ○ 未解锁  v6 仅 IPv6",
+    "ul.r.0": "跨国平台", "ul.r.11": "AI 平台", "ul.r.1": "台湾", "ul.r.2": "香港", "ul.r.3": "日本", "ul.r.4": "韩国",
+    "ul.r.5": "北美", "ul.r.6": "南美", "ul.r.7": "欧洲", "ul.r.8": "非洲", "ul.r.9": "东南亚", "ul.r.10": "大洋洲",
     "sec.config": " 配置 ", "sec.res": " 资源 ", "sec.ping": " Ping ",
     "k.os": "系统", "k.arch": "架构", "k.virt": "虚拟化", "k.kernel": "内核", "k.cpu": "处理器", "k.gpu": "显卡", "k.memory": "内存",
     "k.swap": "交换", "k.disk": "磁盘", "k.region": "地区", "k.group": "分组", "k.tags": "标签", "k.price": "价格",
@@ -105,7 +113,9 @@ const D = {
  h l  [ ]  ← →     上一个 / 下一个时间范围
  o                 概览：配置、资源
  p                 延迟：每个任务的 Ping
- Tab               概览 / 延迟 切换
+ c                 解锁：流媒体 / AI（需 unlock-test
+                   插件）
+ Tab               切换标签页
  j k  ↓ ↑          延迟页选任务 / 概览滚动
  gg  G             顶部 / 底部
  Enter             延迟页：放大当前任务

@@ -439,6 +439,7 @@ addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(layout, 120
 Promise.all([getJSON("/api/public").catch(() => ({})), getJSON("/api/nodes").catch(() => [])]).then(([pub, list]) => {
   site = pub || {};
   settings = site.theme_settings || {};
+  document.documentElement.classList.toggle("no-ulw", settings.hide_unlock_widget !== false);
   if (site.sitename) { siteName = site.sitename; document.title = site.sitename; }
   nodes = Array.isArray(list) ? list : [];
   const lg = detect(settings.language);

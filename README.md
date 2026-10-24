@@ -15,6 +15,7 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 - btop-style cards: gradient meters and braille history graphs for CPU and network
 - 23 Omarchy palettes; follows light/dark by default, visitors can switch, admins set the defaults
 - Node detail page (`Enter` on a node): machine config, live resources with history graphs, and ping latency
+- Optional unlock tab (`c`) in the detail page: streaming / AI unlock results per service, grouped by region, with `v6` for IPv6-only unlocks. It reads the snapshot of the [unlock-test plugin](https://github.com/livingfree2023/Komari-Plugin-UnlockTest), which must be installed and enabled to probe the nodes; without it the tab is simply absent. The plugin's own floating widget is hidden by default (theme setting)
 - Ping view per task: latency graph, loss markers, avg/min/max, p50/p95/p99, jitter; switchable time range
 - English / Chinese UI. The language is chosen from: the visitor's saved choice, the admin default, Komari's `language` cookie, then the browser language. Press `i` or click the language button to switch
 - Vim-style keyboard navigation
@@ -50,7 +51,7 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 | Key | Action |
 | --- | --- |
 | `h` `l` / `[` `]` | previous / next time range (1h, 6h, 24h, 7d, 30d; limited by the server's retention) |
-| `o` / `p` / `Tab` | overview / ping / switch |
+| `o` / `p` / `c` / `Tab` | overview / ping / unlock / switch |
 | `j` `k` | ping: select a task; overview: scroll |
 | `Enter` | ping: zoom into the selected task |
 | `u` `Esc` | back: unzoom, then to the node list |

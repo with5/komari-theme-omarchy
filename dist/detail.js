@@ -2,14 +2,15 @@
 // Reached with Enter from the list (#/node/<uuid>). All drawing is text, like the cards.
 import { esc, wcw, clip, stripEmoji, bytes, uptime, pct, ms, graph, bucketize, meter, box, padL, txt } from "./util.js";
 import { t as tr } from "./i18n.js";
-import { pingRecords, loadRecords, invalidate } from "./api.js";
+import { pingRecords, loadRecords, unlockSnapshot, invalidate } from "./api.js";
+import { nodeEntry } from "./unlock.js";
 
 const RANGES = [[1, "1h"], [6, "6h"], [24, "24h"], [168, "7d"], [720, "30d"]];
 const $ = (id) => document.getElementById(id);
 
 export function createDetail(app) {
   const st = { uuid: null, tab: "overview", ri: 0, sel: 0, zoom: null };
-  const slots = { ping: null, load: null }; // {key, at, value, err, loading, memo}
+  const slots = { ping: null, load: null, unlock: null }; // {key, at, value, err, loading, memo}
   let timer = 0, lastHTML = "", pendingG = 0, DW = 90;
 
   const node = () => app.nodes().find((n) => n.uuid === st.uuid);
@@ -34,6 +35,7 @@ export function createDetail(app) {
         .catch((e) => { if (keyNow() === key) slots[kind] = { key, at: Date.now(), value: null, err: e.message || "failed" }; }));
     };
     run("ping", pingRecords);
+    run("unlock", (uuid) => unlockSnapshot().then((snap) => nodeEntry(snap, uuid)));
     if (st.tab === "overview") run("load", loadRecords);
     render();
     await Promise.all(jobs);
@@ -254,6 +256,44 @@ export function createDetail(app) {
     return model.map((t, i) => `<div class="blk${i === st.sel ? " cur" : ""}">${taskBlock(I, t, false)}</div>`).join("");
   }
 
+  // unlock results come from the optional unlock-test plugin; no data means no tab
+  const hasUnlock = () => !!(slots.unlock && slots.unlock.value);
+  const stamp = (iso) => {
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    const z = (x) => String(x).padStart(2, "0");
+    return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`;
+  };
+  const codeClass = (it) => (it.unlocked ? "g" : it.status === "RESTRICTED" ? "y" : "r");
+
+  function unlockTab(I) {
+    const v = slots.unlock.value, L = [];
+    const cap = Math.max(10, Math.floor((I - 4) / 2));
+    for (const g of v.groups) {
+      const b = box(I), ok = g.items.filter((x) => x.unlocked).length;
+      const nameW = Math.min(18, cap, Math.max(...g.items.map((x) => wcw(x.name))));
+      const codeW = Math.max(...g.items.map((x) => wcw(x.code) + (x.v6 ? 3 : 0)));
+      const cell = 2 + nameW + 1 + codeW, gap = 2;
+      const cols = Math.max(1, Math.floor((I - 2 + gap) / (cell + gap)));
+      const key = "ul.r." + g.id, label = tr(key) === key ? g.key : tr(key);
+      L.push(b.top(` ${label} `, ` ${ok}/${g.items.length} `));
+      for (let i = 0; i < g.items.length; i += cols) {
+        const segs = [["", " "]];
+        g.items.slice(i, i + cols).forEach((it, j) => {
+          const code = (it.v6 ? "v6 " : "") + it.code;
+          if (j) segs.push(["", " ".repeat(gap)]);
+          segs.push([codeClass(it), it.unlocked ? "●" : "○"], ["", " "], [it.unlocked ? "w" : "d", padTo(clip(it.name, nameW), nameW)],
+            ["", " "], [codeClass(it), padL(code, codeW)]);
+        });
+        L.push(b.row(segs));
+      }
+      L.push(b.bottom());
+    }
+    const when = v.updatedAt ? stamp(v.updatedAt) : "";
+    L.push(`<div class="dhead d">${txt([when && tr("ul.at", { t: when }), tr("ul.legend")].filter(Boolean).join("  ·  "))}</div>`);
+    return L.join("");
+  }
+
   function head(n, r) {
     const on = r && app.live().online.has(n.uuid);
     return `<div class="dhead"><span class="${on ? "g" : "r"}">●</span> ${txt(on ? tr("up", { t: uptime(r.uptime) }) : tr("offline"))}` +
@@ -263,7 +303,7 @@ export function createDetail(app) {
   function tabs() {
     const t = (id, key, label) => `<span class="tab${st.tab === id ? " on" : ""}" data-tab="${id}"> ${key} ${txt(label)} </span>`;
     const rs = ranges().map((r, i) => `<span class="tab${i === Math.min(st.ri, ranges().length - 1) ? " on" : ""}" data-range="${i}"> ${r[1]} </span>`).join("");
-    return `<div class="ln tabs">${t("overview", "o", tr("tab.overview"))}${t("ping", "p", tr("tab.ping"))}<span class="sp"></span>${rs}</div>`;
+    return `<div class="ln tabs">${t("overview", "o", tr("tab.overview"))}${t("ping", "p", tr("tab.ping"))}${hasUnlock() ? t("unlock", "c", tr("tab.unlock")) : ""}<span class="sp"></span>${rs}</div>`;
   }
 
   function render() {
@@ -272,7 +312,9 @@ export function createDetail(app) {
     if (!n) return;
     const I = DW - 2, r = app.live().data[n.uuid];
     let body;
-    if (st.tab === "ping") body = pingTab(I);
+    if (st.tab === "unlock" && !hasUnlock() && slots.unlock && !slots.unlock.loading) st.tab = "overview";
+    if (st.tab === "unlock" && hasUnlock()) body = unlockTab(I);
+    else if (st.tab === "ping") body = pingTab(I);
     else body = configBox(I, n, r) + resourcesBox(I, n, r) + pingSummaryBox(I);
     const html = tabs() + head(n, r) + body;
     if (html === lastHTML) return;
@@ -290,7 +332,7 @@ export function createDetail(app) {
   }
 
   function show(uuid) {
-    if (st.uuid !== uuid) { st.tab = "overview"; st.sel = 0; st.zoom = null; slots.ping = slots.load = null; }
+    if (st.uuid !== uuid) { st.tab = "overview"; st.sel = 0; st.zoom = null; slots.ping = slots.load = slots.unlock = null; }
     st.uuid = uuid;
     $("detail").hidden = false;
     clearInterval(timer);
@@ -332,7 +374,8 @@ export function createDetail(app) {
       case "l": case "ArrowRight": case "]": stepRange(1); return true;
       case "o": setTab("overview"); return true;
       case "p": setTab("ping"); return true;
-      case "Tab": setTab(st.tab === "ping" ? "overview" : "ping"); return true;
+      case "c": if (hasUnlock()) setTab("unlock"); return true;
+      case "Tab": { const tabs = ["overview", "ping", ...(hasUnlock() ? ["unlock"] : [])]; setTab(tabs[(tabs.indexOf(st.tab) + 1) % tabs.length]); return true; }
       case "j": case "ArrowDown": if (inPing) sel(st.sel + 1); else scrollBy({ top: 120 }); return true;
       case "k": case "ArrowUp": if (inPing) sel(st.sel - 1); else scrollBy({ top: -120 }); return true;
       case "g": if (g) { if (inPing) sel(0); scrollTo({ top: 0 }); } else pendingG = Date.now(); return true;
@@ -362,7 +405,7 @@ export function createDetail(app) {
     active: () => !!st.uuid,
     info: () => {
       const n = node();
-      return { mode: st.tab === "ping" ? (st.zoom != null ? "ZOOM" : "PING") : "DETAIL", name: n ? n.name : "", pos: rangeLabel() };
+      return { mode: st.tab === "unlock" ? "UNLOCK" : st.tab === "ping" ? (st.zoom != null ? "ZOOM" : "PING") : "DETAIL", name: n ? n.name : "", pos: rangeLabel() };
     },
   };
 }

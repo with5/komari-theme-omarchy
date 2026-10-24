@@ -96,6 +96,16 @@
         "required": false,
         "type": "switch",
         "default": true
+      },
+      {
+        "key": "hide_unlock_widget",
+        "name": {
+          "en": "Hide the unlock-test plugin's floating widget (results show in the node detail page)",
+          "zh-CN": "隐藏解锁检测插件的悬浮窗（结果显示在节点详情页）"
+        },
+        "required": false,
+        "type": "switch",
+        "default": true
       }
     ]
   }

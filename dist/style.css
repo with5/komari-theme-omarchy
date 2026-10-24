@@ -100,3 +100,6 @@ body { padding-bottom: 34px; }
 
 /* every wide character occupies exactly two cells, centered, whatever its glyph advance is */
 .cj { display: inline-block; width: 2ch; text-align: center; }
+
+/* the unlock-test plugin's floating widget; the detail page shows the same results */
+.no-ulw #km-unlock-floating-root, .no-ulw #km-ul-min-icon, .no-ulw .km-ul-modal-backdrop { display: none !important; }
