@@ -2,7 +2,7 @@
   "name": "Omarchy",
   "short": "omarchy",
   "description": "Omarchy-style terminal UI: ASCII banner effects, btop-like meters and graphs. / Omarchy 风格终端界面：ASCII 横幅动画、btop 风格的仪表与曲线。",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": "with5",
   "url": "https://github.com/with5/komari-theme-omarchy",
   "preview": "preview.png",
