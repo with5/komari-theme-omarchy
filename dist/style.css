@@ -70,7 +70,7 @@ body { padding-bottom: 34px; }
 .status .mode { background: var(--accent); color: var(--background); font-weight: 700; padding: 0 10px; align-self: stretch; display: flex; align-items: center; }
 .status .flt { color: var(--yellow); } .status .nm { color: var(--bright-foreground); }
 .status .pal, .status #st-pos { color: var(--dark-foreground); }
-.status .hk { font: inherit; color: var(--background); background: var(--muted); border: 0; padding: 0 10px; align-self: stretch; cursor: pointer; }
+.status .hk { display: flex; align-items: center; text-decoration: none; font: inherit; color: var(--background); background: var(--muted); border: 0; padding: 0 10px; align-self: stretch; cursor: pointer; }
 .status .hk:hover { background: var(--accent); }
 .status .cmd { position: absolute; inset: 0; display: flex; align-items: center; background: var(--darker-background); padding: 0 8px; color: var(--accent); }
 .status .cmd[hidden] { display: none; }

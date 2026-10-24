@@ -196,7 +196,7 @@ function linesFor(text) {
 }
 function setBanner(text, play, effect) {
   bannerText = text;
-  banner.set(linesFor(text), innerWidth - 24, 16);
+  banner.set(linesFor(text), innerWidth - 24, 16, 120);
   if (play) banner.play(effect);
 }
 const siteBanner = () => (settings.banner || siteName || "komari");
@@ -348,6 +348,7 @@ addEventListener("keydown", (e) => {
   if (!help.hidden) { if (k === "?" || k === "u" || k === "Escape" || k === "q") { help.hidden = true; e.preventDefault(); } return; }
   // keys that work on every page
   if (k === "?") { openHelp(); e.preventDefault(); return; }
+  if (k === "a") { location.href = "/admin"; e.preventDefault(); return; }
   if (k === "i") { toggleLang(); e.preventDefault(); return; }
   if (k === "t") { stepPalette(1); status(); e.preventDefault(); return; }
   if (k === "T") { stepPalette(-1); status(); e.preventDefault(); return; }

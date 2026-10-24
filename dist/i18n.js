@@ -7,7 +7,7 @@ const STORE = "omarchy-lang";
 const D = {
   en: {
     online: "online", offline: "offline", up: "up {t}", cpuavg: "cpu avg", nodes: "nodes", nonodes: "no nodes",
-    all: "all", auto: "auto", help: "? help", search: "search",
+    all: "all", auto: "auto", help: "? help", admin: "admin", search: "search",
     "dur.d": "d", "dur.h": "h", "dur.m": "m", now: "now",
     "tab.overview": "overview", "tab.ping": "ping",
     "sec.config": " config ", "sec.res": " resources ", "sec.ping": " ping ",
@@ -39,6 +39,7 @@ const D = {
  r                 replay banner effect
  s                 screensaver
  i                 language: English / 中文
+ a                 open admin panel
  ?                 this help
 
  press ? u or Esc to close`,
@@ -57,13 +58,14 @@ const D = {
  t  T              next / prev palette
  s                 screensaver
  i                 language: English / 中文
+ a                 open admin panel
  ?                 this help
 
  press ? u or Esc to close`,
   },
   zh: {
     online: "在线", offline: "离线", up: "已运行 {t}", cpuavg: "CPU 均值", nodes: "节点", nonodes: "暂无节点",
-    all: "全部", auto: "自动", help: "? 帮助", search: "搜索",
+    all: "全部", auto: "自动", help: "? 帮助", admin: "后台", search: "搜索",
     "dur.d": "天", "dur.h": "时", "dur.m": "分", now: "现在",
     "tab.overview": "概览", "tab.ping": "延迟",
     "sec.config": " 配置 ", "sec.res": " 资源 ", "sec.ping": " Ping ",
@@ -94,6 +96,7 @@ const D = {
  r                 重播横幅动画
  s                 屏保
  i                 语言：English / 中文
+ a                 打开后台
  ?                 本帮助
 
  按 ? u 或 Esc 关闭`,
@@ -112,6 +115,7 @@ const D = {
  t  T              下一个 / 上一个调色板
  s                 屏保
  i                 语言：English / 中文
+ a                 打开后台
  ?                 本帮助
 
  按 ? u 或 Esc 关闭`,

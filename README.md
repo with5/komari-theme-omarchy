@@ -9,6 +9,8 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 ## Features
 
 - ASCII banner of the site name with random effects (decrypt, rain, beams, scatter, burn); click it or press `r` to replay
+- Site names the pixel font lacks (Chinese, accents) are rasterized from a system font into the same block art, so every effect still works
+- An `admin` button in the status bar (and the `a` key) opens the Komari admin panel
 - Screensaver after 90 s idle, looping the same effects on black
 - btop-style cards: gradient meters and braille history graphs for CPU and network
 - 23 Omarchy palettes; follows light/dark by default, visitors can switch, admins set the defaults
@@ -40,6 +42,7 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 | `r` | replay banner effect |
 | `s` | screensaver |
 | `i` | switch language (English / 中文) |
+| `a` | open the admin panel (`/admin`) |
 | `?` | help |
 
 ### In the detail page

@@ -134,7 +134,7 @@
       this._tick = this._tick.bind(this);
     }
 
-    set(lines, availW, maxFs) {
+    set(lines, availW, maxFs, maxH = Infinity) {
       this.stop();
       this.lines = lines;
       this.W = Math.max(1, ...lines.map((l) => [...l].length));
@@ -142,7 +142,7 @@
       this.cells = [];
       lines.forEach((l, y) => [...l].forEach((ch, x) => ch !== " " && this.cells.push({ ch, x, y, r: 0, ox: 0, oy: 0 })));
       let fs = maxFs;
-      for (; fs > 6; fs--) { this._font(fs); if (this.W * this.cw <= availW) break; }
+      for (; fs > 6; fs--) { this._font(fs); if (this.W * this.cw <= availW && this.H * this.lh <= maxH) break; }
       this._size();
       this.drawStatic();
     }
