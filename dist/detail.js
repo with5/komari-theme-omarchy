@@ -2,15 +2,17 @@
 // Reached with Enter from the list (#/node/<uuid>). All drawing is text, like the cards.
 import { esc, wcw, clip, stripEmoji, bytes, uptime, pct, ms, graph, bucketize, meter, box, padL, txt } from "./util.js";
 import { t as tr } from "./i18n.js";
-import { pingRecords, loadRecords, unlockSnapshot, invalidate } from "./api.js";
+import { pingRecords, loadRecords, unlockSnapshot, forecastOverview, qualitySnapshot, invalidate } from "./api.js";
 import { nodeEntry } from "./unlock.js";
+import { nodeForecast, dailySeries } from "./forecast.js";
+import { nodeQuality } from "./quality.js";
 
 const RANGES = [[1, "1h"], [6, "6h"], [24, "24h"], [168, "7d"], [720, "30d"]];
 const $ = (id) => document.getElementById(id);
 
 export function createDetail(app) {
-  const st = { uuid: null, tab: "overview", ri: 0, sel: 0, zoom: null };
-  const slots = { ping: null, load: null, unlock: null }; // {key, at, value, err, loading, memo}
+  const st = { uuid: null, tab: "overview", ri: 0, sel: 0, zoom: null, stack: "ipv4" };
+  const slots = { ping: null, load: null, unlock: null, forecast: null, quality: null }; // {key, at, value, err, loading, memo}
   let timer = 0, lastHTML = "", pendingG = 0, DW = 90;
 
   const node = () => app.nodes().find((n) => n.uuid === st.uuid);
@@ -36,6 +38,8 @@ export function createDetail(app) {
     };
     run("ping", pingRecords);
     run("unlock", (uuid) => unlockSnapshot().then((snap) => nodeEntry(snap, uuid)));
+    run("forecast", (uuid) => forecastOverview().then((o) => nodeForecast(o, uuid)));
+    run("quality", (uuid) => qualitySnapshot().then((s) => nodeQuality(s, uuid)));
     if (st.tab === "overview") run("load", loadRecords);
     render();
     await Promise.all(jobs);
@@ -294,6 +298,96 @@ export function createDetail(app) {
     return L.join("");
   }
 
+  // traffic quota comes from the optional net-forecast plugin; no data means no tab
+  const hasForecast = () => !!(slots.forecast && slots.forecast.value);
+  const statusClass = { SAFE: "g", WARNING: "y", CRITICAL: "r", NO_QUOTA: "d" };
+
+  function trafficTab(I) {
+    const f = slots.forecast.value, b = box(I), sc = statusClass[f.status] || "d", L = [];
+    L.push(b.top(tr("sec.traffic"), ` ${tr("tf.st." + f.status)} `));
+    const mw = Math.max(10, I - 22);
+    if (f.hasQuota) {
+      const pctTxt = `${(f.ratio * 100).toFixed(f.ratio >= 1 ? 0 : 1)}%`;
+      L.push(b.row([["", " "], ...meter(f.ratio, mw), ["", " "], [sc, padL(pctTxt, 6)]]));
+      L.push(pairsRow(b, [[tr("tf.used"), bytes(f.used), sc], [tr("tf.limit"), `${bytes(f.limit)} ${f.mode}`]]));
+      L.push(pairsRow(b, [[tr("tf.proj"), bytes(f.projected), f.projected > f.limit ? "r" : "w"], [tr("tf.avg"), `${bytes(f.avgDaily)}/${tr("dur.d")}`]]));
+      if (f.exhaustDays != null && f.exhaustDays < 999) L.push(note(b, tr("tf.exhaust", { n: f.exhaustDays, d: f.exhaustDate }), "r"));
+    } else {
+      L.push(pairsRow(b, [[tr("tf.used"), bytes(f.in + f.out)], [tr("tf.avg"), `${bytes(f.avgDaily)}/${tr("dur.d")}`]]));
+      L.push(note(b, tr("tf.noquota")));
+    }
+    L.push(pairsRow(b, [["↓", bytes(f.in), "g"], ["↑", bytes(f.out), "g"], [tr("tf.cycle"), `${f.cycle.start} → ${f.cycle.end}`], [tr("tf.left"), tr("left", { n: f.cycle.remaining })]]));
+    L.push(b.bottom());
+
+    const days = f.days.filter((x) => !x.forecast), series = dailySeries(f);
+    if (days.some((x) => x.total > 0)) {
+      const g = box(I), w = Math.max(4, Math.min(I - 4, Math.ceil(series.length / 2))), peak = Math.max(...days.map((x) => x.total));
+      L.push(g.top(tr("sec.daily"), ` ${tr("tf.peak", { v: bytes(peak) })} `));
+      for (const row of graph(series, w, 4, peak)) L.push(g.row([["", " "], ["g", row]]));
+      L.push(g.row([["", " "], ["d", `${days[0].date.slice(5)} ${"─".repeat(Math.max(0, w - 12))} ${f.cycle.end.slice(5)}`]]));
+      L.push(g.bottom());
+    }
+    return L.join("");
+  }
+
+  // IP quality comes from the optional ip-quality plugin; no data means no tab
+  const hasQuality = () => !!(slots.quality && slots.quality.value);
+  const scoreClass = (v) => (v < 25 ? "g" : v < 60 ? "y" : "r");
+  const factorClass = (f) => (!f.hit ? "g" : f.hit * 2 >= f.total ? "r" : "y");
+
+  function qualityTab(I) {
+    const q = slots.quality.value, keys = Object.keys(q.stacks);
+    const stack = q.stacks[st.stack] ? st.stack : keys[0], v = q.stacks[stack], L = [];
+    const sw = keys.map((k) => (k === stack ? `[${tr("q." + k)}]` : ` ${tr("q." + k)} `)).join("");
+    const b = box(I);
+    L.push(b.top(tr("sec.quality"), ` ${sw} `));
+    L.push(pairsRow(b, [["ip", v.ip || "-"], ["asn", v.asn ? "AS" + v.asn : "-"]]));
+    if (v.org) L.push(note(b, clip(v.org, I - 2), "w"));
+    L.push(pairsRow(b, [[tr("q.country"), [v.country, v.countryName].filter(Boolean).join(" ") || "-"], [tr("q.city"), v.city || "-"], [tr("q.reg"), v.registered || "-"]]));
+    L.push(b.row([["", " "], [v.geoOk ? "g" : "y", v.geoOk ? "● " + tr("q.geo.ok") : "● " + tr("q.geo.bad")]]));
+    if (v.usage) {
+      L.push(pairsRow(b, [[tr("q.usage"), v.usage.top, v.usage.mixed ? "y" : "w"], [tr("q.dbs"), `${v.usage.n}/${v.usage.all.reduce((s, x) => s + x[1], 0)}`]]));
+      if (v.usage.mixed) L.push(note(b, clip(v.usage.all.map(([k, c]) => `${k} ${c}`).join(" · "), I - 2)));
+    }
+    L.push(b.bottom());
+
+    if (v.scores.length) {
+      const s = box(I), nw = Math.min(14, Math.max(...v.scores.map((x) => wcw(x.name)))), mw = Math.max(8, I - nw - 12);
+      L.push(s.top(tr("sec.scores"), ` ${tr("q.low")} `));
+      for (const x of v.scores) {
+        const c = scoreClass(x.value);
+        L.push(s.row([["", " "], ["w", padTo(clip(x.name, nw), nw)], ["", " "], ...meter(x.value / 100, mw), ["", " "], [c, padL(String(Math.round(x.value * 10) / 10), 5)]]));
+      }
+      L.push(s.bottom());
+    }
+
+    if (v.factors.length) {
+      const f = box(I), nw = Math.max(...v.factors.map((x) => wcw(tr("q.f." + x.key))));
+      L.push(f.top(tr("sec.factors"), ` ${tr("q.hits")} `));
+      for (const x of v.factors) {
+        const c = factorClass(x), who = x.sources.join(" ");
+        L.push(f.row([["", " "], [c, "●"], ["", " "], ["w", padTo(tr("q.f." + x.key), nw)], ["", " "], [c, padL(`${x.hit}/${x.total}`, 5)],
+          ["d", "  " + clip(who, Math.max(0, I - nw - 12))]]));
+      }
+      L.push(f.bottom());
+    }
+
+    const m = box(I), mrows = [];
+    if (v.blacklist) {
+      const bl = v.blacklist;
+      mrows.push(pairsRow(m, [[tr("q.bl"), `${bl.clean}/${bl.total}`, bl.listed ? "r" : "g"], [tr("q.marked"), bl.marked, bl.marked ? "y" : "w"], [tr("q.listed"), bl.listed, bl.listed ? "r" : "g"]]));
+    }
+    const mp = [];
+    if (v.port25 != null) mp.push(["25", v.port25 ? tr("q.open") : tr("q.blocked"), v.port25 ? "g" : "y"]);
+    if (v.mailTotal) mp.push([tr("q.mail"), `${v.mailOk}/${v.mailTotal}`]);
+    if (mp.length) mrows.push(pairsRow(m, mp));
+    if (mrows.length) L.push(m.top(tr("sec.mail")), ...mrows, m.bottom());
+
+    const when = v.checkedAt || (q.updatedAt ? stamp(q.updatedAt) : "");
+    L.push(`<div class="dhead d">${txt([when && tr("q.at", { t: when }), keys.length > 1 && tr("q.switch")].filter(Boolean).join("  ·  "))}</div>`);
+    return L.join("");
+  }
+
   function head(n, r) {
     const on = r && app.live().online.has(n.uuid);
     return `<div class="dhead"><span class="${on ? "g" : "r"}">●</span> ${txt(on ? tr("up", { t: uptime(r.uptime) }) : tr("offline"))}` +
@@ -303,7 +397,7 @@ export function createDetail(app) {
   function tabs() {
     const t = (id, key, label) => `<span class="tab${st.tab === id ? " on" : ""}" data-tab="${id}"> ${key} ${txt(label)} </span>`;
     const rs = ranges().map((r, i) => `<span class="tab${i === Math.min(st.ri, ranges().length - 1) ? " on" : ""}" data-range="${i}"> ${r[1]} </span>`).join("");
-    return `<div class="ln tabs">${t("overview", "o", tr("tab.overview"))}${t("ping", "p", tr("tab.ping"))}${hasUnlock() ? t("unlock", "c", tr("tab.unlock")) : ""}<span class="sp"></span>${rs}</div>`;
+    return `<div class="ln tabs">${t("overview", "o", tr("tab.overview"))}${t("ping", "p", tr("tab.ping"))}${hasQuality() ? t("quality", "q", tr("tab.quality")) : ""}${hasForecast() ? t("traffic", "f", tr("tab.traffic")) : ""}${hasUnlock() ? t("unlock", "c", tr("tab.unlock")) : ""}<span class="sp"></span>${rs}</div>`;
   }
 
   function render() {
@@ -313,7 +407,11 @@ export function createDetail(app) {
     const I = DW - 2, r = app.live().data[n.uuid];
     let body;
     if (st.tab === "unlock" && !hasUnlock() && slots.unlock && !slots.unlock.loading) st.tab = "overview";
-    if (st.tab === "unlock" && hasUnlock()) body = unlockTab(I);
+    if (st.tab === "quality" && !hasQuality() && slots.quality && !slots.quality.loading) st.tab = "overview";
+    if (st.tab === "quality" && hasQuality()) body = qualityTab(I);
+    else if (st.tab === "traffic" && !hasForecast() && slots.forecast && !slots.forecast.loading) st.tab = "overview";
+    else if (st.tab === "traffic" && hasForecast()) body = trafficTab(I);
+    else if (st.tab === "unlock" && hasUnlock()) body = unlockTab(I);
     else if (st.tab === "ping") body = pingTab(I);
     else body = configBox(I, n, r) + resourcesBox(I, n, r) + pingSummaryBox(I);
     const html = tabs() + head(n, r) + body;
@@ -332,7 +430,7 @@ export function createDetail(app) {
   }
 
   function show(uuid) {
-    if (st.uuid !== uuid) { st.tab = "overview"; st.sel = 0; st.zoom = null; slots.ping = slots.load = slots.unlock = null; }
+    if (st.uuid !== uuid) { st.tab = "overview"; st.sel = 0; st.zoom = null; slots.ping = slots.load = slots.unlock = slots.forecast = slots.quality = null; }
     st.uuid = uuid;
     $("detail").hidden = false;
     clearInterval(timer);
@@ -374,8 +472,11 @@ export function createDetail(app) {
       case "l": case "ArrowRight": case "]": stepRange(1); return true;
       case "o": setTab("overview"); return true;
       case "p": setTab("ping"); return true;
+      case "q": if (hasQuality()) setTab("quality"); return true;
+      case "v": if (st.tab === "quality" && hasQuality()) { const ks = Object.keys(slots.quality.value.stacks); st.stack = ks[(ks.indexOf(ks.includes(st.stack) ? st.stack : ks[0]) + 1) % ks.length]; lastHTML = ""; render(); } return true;
+      case "f": if (hasForecast()) setTab("traffic"); return true;
       case "c": if (hasUnlock()) setTab("unlock"); return true;
-      case "Tab": { const tabs = ["overview", "ping", ...(hasUnlock() ? ["unlock"] : [])]; setTab(tabs[(tabs.indexOf(st.tab) + 1) % tabs.length]); return true; }
+      case "Tab": { const tabs = ["overview", "ping", ...(hasQuality() ? ["quality"] : []), ...(hasForecast() ? ["traffic"] : []), ...(hasUnlock() ? ["unlock"] : [])]; setTab(tabs[(tabs.indexOf(st.tab) + 1) % tabs.length]); return true; }
       case "j": case "ArrowDown": if (inPing) sel(st.sel + 1); else scrollBy({ top: 120 }); return true;
       case "k": case "ArrowUp": if (inPing) sel(st.sel - 1); else scrollBy({ top: -120 }); return true;
       case "g": if (g) { if (inPing) sel(0); scrollTo({ top: 0 }); } else pendingG = Date.now(); return true;
@@ -405,7 +506,7 @@ export function createDetail(app) {
     active: () => !!st.uuid,
     info: () => {
       const n = node();
-      return { mode: st.tab === "unlock" ? "UNLOCK" : st.tab === "ping" ? (st.zoom != null ? "ZOOM" : "PING") : "DETAIL", name: n ? n.name : "", pos: rangeLabel() };
+      return { mode: st.tab === "quality" ? "QUALITY" : st.tab === "traffic" ? "TRAFFIC" : st.tab === "unlock" ? "UNLOCK" : st.tab === "ping" ? (st.zoom != null ? "ZOOM" : "PING") : "DETAIL", name: n ? n.name : "", pos: rangeLabel() };
     },
   };
 }

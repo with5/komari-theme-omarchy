@@ -9,7 +9,16 @@ const D = {
     online: "online", offline: "offline", up: "up {t}", cpuavg: "cpu avg", nodes: "nodes", nonodes: "no nodes",
     all: "all", auto: "auto", help: "? help", admin: "admin", search: "search",
     "dur.d": "d", "dur.h": "h", "dur.m": "m", now: "now",
-    "tab.overview": "overview", "tab.ping": "ping", "tab.unlock": "unlock",
+    "tab.overview": "overview", "tab.ping": "ping", "tab.unlock": "unlock", "tab.traffic": "traffic", "tab.quality": "ip quality",
+    "sec.quality": " ip quality ", "sec.scores": " risk scores ", "sec.factors": " risk factors ", "sec.mail": " mail & blacklist ",
+    "q.ipv4": "IPv4", "q.ipv6": "IPv6", "q.country": "country", "q.city": "city", "q.reg": "registered", "q.usage": "type", "q.dbs": "dbs",
+    "q.geo.ok": "location data consistent", "q.geo.bad": "location data disagrees between databases", "q.low": "lower is better", "q.hits": "databases flagging",
+    "q.f.proxy": "proxy", "q.f.vpn": "vpn", "q.f.tor": "tor", "q.f.server": "datacenter", "q.f.abuser": "abuser", "q.f.robot": "robot",
+    "q.bl": "blacklists clean", "q.marked": "marked", "q.listed": "listed", "q.open": "open", "q.blocked": "blocked", "q.mail": "mail providers",
+    "q.at": "checked {t}", "q.switch": "v: switch IPv4 / IPv6",
+    "sec.traffic": " traffic ", "sec.daily": " daily ", "tf.used": "used", "tf.limit": "limit", "tf.proj": "forecast", "tf.avg": "avg", "tf.cycle": "cycle", "tf.left": "reset in",
+    "tf.st.SAFE": "safe", "tf.st.WARNING": "warning", "tf.st.CRITICAL": "over quota", "tf.st.NO_QUOTA": "no quota",
+    "tf.exhaust": "quota runs out in {n}d ({d})", "tf.noquota": "no traffic limit set for this node", "tf.peak": "peak {v}/d",
     "ul.at": "probed {t}", "ul.legend": "● unlocked  ○ locked  v6 ipv6 only",
     "ul.r.0": "global", "ul.r.11": "ai", "ul.r.1": "taiwan", "ul.r.2": "hong kong", "ul.r.3": "japan", "ul.r.4": "korea",
     "ul.r.5": "north america", "ul.r.6": "south america", "ul.r.7": "europe", "ul.r.8": "africa", "ul.r.9": "southeast asia", "ul.r.10": "oceania",
@@ -51,6 +60,11 @@ const D = {
  h l  [ ]  ← →     previous / next time range
  o                 overview: config, resources
  p                 ping: latency per task
+ q                 ip quality: risk scores, factors
+                   (needs the ip-quality plugin)
+ v                 ip quality: switch IPv4 / IPv6
+ f                 traffic: quota and forecast (needs
+                   the net-forecast plugin)
  c                 unlock: streaming / AI (needs the
                    unlock-test plugin)
  Tab               switch tabs
@@ -72,7 +86,16 @@ const D = {
     online: "在线", offline: "离线", up: "已运行 {t}", cpuavg: "CPU 均值", nodes: "节点", nonodes: "暂无节点",
     all: "全部", auto: "自动", help: "? 帮助", admin: "后台", search: "搜索",
     "dur.d": "天", "dur.h": "时", "dur.m": "分", now: "现在",
-    "tab.overview": "概览", "tab.ping": "延迟", "tab.unlock": "解锁",
+    "tab.overview": "概览", "tab.ping": "延迟", "tab.unlock": "解锁", "tab.traffic": "流量", "tab.quality": "IP 质量",
+    "sec.quality": " IP 质量 ", "sec.scores": " 风险评分 ", "sec.factors": " 风险因子 ", "sec.mail": " 邮局与黑名单 ",
+    "q.ipv4": "IPv4", "q.ipv6": "IPv6", "q.country": "国家", "q.city": "城市", "q.reg": "注册地", "q.usage": "类型", "q.dbs": "数据库",
+    "q.geo.ok": "各数据库归属地一致", "q.geo.bad": "各数据库归属地不一致", "q.low": "越低越好", "q.hits": "命中数据库",
+    "q.f.proxy": "代理", "q.f.vpn": "VPN", "q.f.tor": "Tor", "q.f.server": "机房", "q.f.abuser": "滥用", "q.f.robot": "机器人",
+    "q.bl": "黑名单干净", "q.marked": "标记", "q.listed": "列入", "q.open": "开放", "q.blocked": "封锁", "q.mail": "邮局连通",
+    "q.at": "检测于 {t}", "q.switch": "v：切换 IPv4 / IPv6",
+    "sec.traffic": " 流量 ", "sec.daily": " 每日 ", "tf.used": "已用", "tf.limit": "限额", "tf.proj": "预测", "tf.avg": "日均", "tf.cycle": "周期", "tf.left": "重置于",
+    "tf.st.SAFE": "安全", "tf.st.WARNING": "预警", "tf.st.CRITICAL": "超限", "tf.st.NO_QUOTA": "无限额",
+    "tf.exhaust": "预计 {n} 天后耗尽（{d}）", "tf.noquota": "该节点未设置流量限额", "tf.peak": "峰值 {v}/天",
     "ul.at": "检测于 {t}", "ul.legend": "● 已解锁  ○ 未解锁  v6 仅 IPv6",
     "ul.r.0": "跨国平台", "ul.r.11": "AI 平台", "ul.r.1": "台湾", "ul.r.2": "香港", "ul.r.3": "日本", "ul.r.4": "韩国",
     "ul.r.5": "北美", "ul.r.6": "南美", "ul.r.7": "欧洲", "ul.r.8": "非洲", "ul.r.9": "东南亚", "ul.r.10": "大洋洲",
@@ -113,6 +136,11 @@ const D = {
  h l  [ ]  ← →     上一个 / 下一个时间范围
  o                 概览：配置、资源
  p                 延迟：每个任务的 Ping
+ q                 IP 质量：风险评分与因子（需
+                   ip-quality 插件）
+ v                 IP 质量：切换 IPv4 / IPv6
+ f                 流量：额度与预测（需 net-forecast
+                   插件）
  c                 解锁：流媒体 / AI（需 unlock-test
                    插件）
  Tab               切换标签页

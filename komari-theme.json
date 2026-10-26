@@ -98,6 +98,16 @@
         "default": true
       },
       {
+        "key": "hide_forecast_widget",
+        "name": {
+          "en": "Hide the net-forecast plugin's floating widget (traffic shows in the node detail page)",
+          "zh-CN": "隐藏流量预测插件的悬浮窗（结果显示在节点详情页）"
+        },
+        "required": false,
+        "type": "switch",
+        "default": true
+      },
+      {
         "key": "hide_unlock_widget",
         "name": {
           "en": "Hide the unlock-test plugin's floating widget (results show in the node detail page)",

@@ -102,4 +102,6 @@ body { padding-bottom: 34px; }
 .cj { display: inline-block; width: 2ch; text-align: center; }
 
 /* the unlock-test plugin's floating widget; the detail page shows the same results */
+/* the net-forecast plugin's floating widget; the detail page shows the same data */
+.no-nfw #nf-floating-widget { display: none !important; }
 .no-ulw #km-unlock-floating-root, .no-ulw #km-ul-min-icon, .no-ulw .km-ul-modal-backdrop { display: none !important; }

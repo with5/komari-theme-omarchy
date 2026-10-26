@@ -33,6 +33,20 @@ export const unlockSnapshot = () =>
     return d;
   }));
 
+// NetForecast plugin overview (all nodes at once). Rejects when the plugin is absent or disabled.
+export const forecastOverview = () =>
+  cached("f|", 25000, () => fetch("/api/plugin/net-forecast/overview", { credentials: "same-origin" }).then((r) => r.json()).then((d) => {
+    if (!d || !d.ok || !Array.isArray(d.nodes)) throw new Error("no forecast");
+    return d;
+  }));
+
+// ip-quality plugin snapshot (all nodes at once). Rejects when the plugin is absent or disabled.
+export const qualitySnapshot = () =>
+  cached("q|", 25000, () => getJSON("/api/plugin/ip-quality/snapshot").then((d) => {
+    if (!d || typeof d !== "object" || !d.nodes) throw new Error("no snapshot");
+    return d;
+  }));
+
 // ping: {records:[{task_id,time,value,client}], tasks:[{id,name,type,interval,loss,min,max,avg,total}]}
 export const pingRecords = (uuid, hours) =>
   cached(`p|${uuid}|${hours}`, 25000, () => rpc("public:getPingRecords", { uuid, hours: String(hours), max_count: 600 }));
