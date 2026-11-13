@@ -47,6 +47,13 @@ export const qualitySnapshot = () =>
     return d;
   }));
 
+// gfw-check plugin snapshot (all nodes at once). Rejects when the plugin is absent or disabled.
+export const gfwSnapshot = () =>
+  cached("g|", 25000, () => getJSON("/api/plugin/gfw-check/snapshot").then((d) => {
+    if (!d || typeof d !== "object" || !d.nodes) throw new Error("no snapshot");
+    return d;
+  }));
+
 // ping: {records:[{task_id,time,value,client}], tasks:[{id,name,type,interval,loss,min,max,avg,total}]}
 export const pingRecords = (uuid, hours) =>
   cached(`p|${uuid}|${hours}`, 25000, () => rpc("public:getPingRecords", { uuid, hours: String(hours), max_count: 600 }));

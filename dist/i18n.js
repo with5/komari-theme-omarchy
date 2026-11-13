@@ -9,12 +9,17 @@ const D = {
     online: "online", offline: "offline", up: "up {t}", cpuavg: "cpu avg", nodes: "nodes", nonodes: "no nodes",
     all: "all", auto: "auto", help: "? help", admin: "admin", search: "search",
     "dur.d": "d", "dur.h": "h", "dur.m": "m", now: "now",
-    "tab.overview": "overview", "tab.ping": "ping", "tab.unlock": "unlock", "tab.traffic": "traffic", "tab.quality": "ip quality",
+    "tab.overview": "overview", "tab.ping": "ping", "tab.unlock": "unlock", "tab.traffic": "traffic", "tab.quality": "ip quality", "tab.gfw": "gfw",
     "sec.quality": " ip quality ", "sec.scores": " risk scores ", "sec.factors": " risk factors ", "sec.mail": " mail & blacklist ",
     "q.ipv4": "IPv4", "q.ipv6": "IPv6", "q.country": "country", "q.city": "city", "q.reg": "registered", "q.usage": "type", "q.dbs": "dbs",
     "q.geo.ok": "location data consistent", "q.geo.bad": "location data disagrees between databases", "q.low": "lower is better", "q.hits": "databases flagging",
     "q.f.proxy": "proxy", "q.f.vpn": "vpn", "q.f.tor": "tor", "q.f.server": "datacenter", "q.f.abuser": "abuser", "q.f.robot": "robot",
     "q.bl": "blacklists clean", "q.marked": "marked", "q.listed": "listed", "q.open": "open", "q.blocked": "blocked", "q.mail": "mail providers",
+    "sec.gfw": " gfw check ", "gfw.cn": "china", "gfw.abroad": "abroad", "gfw.since": "since",
+    "gfw.s.ok": "ok", "gfw.s.blocked": "blocked", "gfw.s.suspect": "suspect", "gfw.s.down": "down", "gfw.s.unknown": "unknown",
+    "gfw.d.ok": "reachable from China", "gfw.d.blocked": "reachable from abroad, not from China: blocked by the GFW", "gfw.d.suspect": "not reachable from China, to be confirmed next round",
+    "gfw.d.down": "not reachable from anywhere (offline or no ping), not the GFW", "gfw.d.unknown": "not enough probes to tell",
+    "gfw.rule": "ping from China and abroad",
     "q.at": "checked {t}", "q.switch": "v: switch IPv4 / IPv6",
     "sec.traffic": " traffic ", "sec.daily": " daily ", "tf.used": "used", "tf.limit": "limit", "tf.proj": "forecast", "tf.avg": "avg", "tf.cycle": "cycle", "tf.left": "reset in",
     "tf.st.SAFE": "safe", "tf.st.WARNING": "warning", "tf.st.CRITICAL": "over quota", "tf.st.NO_QUOTA": "no quota",
@@ -63,6 +68,8 @@ const D = {
  q                 ip quality: risk scores, factors
                    (needs the ip-quality plugin)
  v                 ip quality: switch IPv4 / IPv6
+ w                 gfw: blocked or not (needs the
+                   gfw-check plugin)
  f                 traffic: quota and forecast (needs
                    the net-forecast plugin)
  c                 unlock: streaming / AI (needs the
@@ -86,12 +93,17 @@ const D = {
     online: "在线", offline: "离线", up: "已运行 {t}", cpuavg: "CPU 均值", nodes: "节点", nonodes: "暂无节点",
     all: "全部", auto: "自动", help: "? 帮助", admin: "后台", search: "搜索",
     "dur.d": "天", "dur.h": "时", "dur.m": "分", now: "现在",
-    "tab.overview": "概览", "tab.ping": "延迟", "tab.unlock": "解锁", "tab.traffic": "流量", "tab.quality": "IP 质量",
+    "tab.overview": "概览", "tab.ping": "延迟", "tab.unlock": "解锁", "tab.traffic": "流量", "tab.quality": "IP 质量", "tab.gfw": "墙检测",
     "sec.quality": " IP 质量 ", "sec.scores": " 风险评分 ", "sec.factors": " 风险因子 ", "sec.mail": " 邮局与黑名单 ",
     "q.ipv4": "IPv4", "q.ipv6": "IPv6", "q.country": "国家", "q.city": "城市", "q.reg": "注册地", "q.usage": "类型", "q.dbs": "数据库",
     "q.geo.ok": "各数据库归属地一致", "q.geo.bad": "各数据库归属地不一致", "q.low": "越低越好", "q.hits": "命中数据库",
     "q.f.proxy": "代理", "q.f.vpn": "VPN", "q.f.tor": "Tor", "q.f.server": "机房", "q.f.abuser": "滥用", "q.f.robot": "机器人",
     "q.bl": "黑名单干净", "q.marked": "标记", "q.listed": "列入", "q.open": "开放", "q.blocked": "封锁", "q.mail": "邮局连通",
+    "sec.gfw": " GFW 检测 ", "gfw.cn": "国内", "gfw.abroad": "国外", "gfw.since": "自",
+    "gfw.s.ok": "正常", "gfw.s.blocked": "被墙", "gfw.s.suspect": "疑似", "gfw.s.down": "不通", "gfw.s.unknown": "未知",
+    "gfw.d.ok": "国内可达", "gfw.d.blocked": "国外能通、国内不通：被 GFW 封锁", "gfw.d.suspect": "国内不通，等待下一轮确认",
+    "gfw.d.down": "国内外都不通（离线或禁 Ping），不是 GFW", "gfw.d.unknown": "探针不足，无法判断",
+    "gfw.rule": "国内外分别 Ping",
     "q.at": "检测于 {t}", "q.switch": "v：切换 IPv4 / IPv6",
     "sec.traffic": " 流量 ", "sec.daily": " 每日 ", "tf.used": "已用", "tf.limit": "限额", "tf.proj": "预测", "tf.avg": "日均", "tf.cycle": "周期", "tf.left": "重置于",
     "tf.st.SAFE": "安全", "tf.st.WARNING": "预警", "tf.st.CRITICAL": "超限", "tf.st.NO_QUOTA": "无限额",
@@ -139,6 +151,8 @@ const D = {
  q                 IP 质量：风险评分与因子（需
                    ip-quality 插件）
  v                 IP 质量：切换 IPv4 / IPv6
+ w                 墙检测：是否被 GFW 封锁（需
+                   gfw-check 插件）
  f                 流量：额度与预测（需 net-forecast
                    插件）
  c                 解锁：流媒体 / AI（需 unlock-test

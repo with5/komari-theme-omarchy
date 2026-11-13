@@ -18,6 +18,7 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 - Optional unlock tab (`c`) in the detail page: streaming / AI unlock results per service, grouped by region, with `v6` for IPv6-only unlocks. It reads the snapshot of the [unlock-test plugin](https://github.com/livingfree2023/Komari-Plugin-UnlockTest), which must be installed and enabled to probe the nodes; without it the tab is simply absent. The plugin's own floating widget is hidden by default (theme setting)
 - Optional traffic tab (`f`) in the detail page: monthly quota meter, billing-cycle usage, end-of-cycle forecast, days until the quota runs out, and a daily traffic graph. It reads the [NetForecast plugin](https://github.com/livingfree2023/Komari-Plugin-NetForecast), which must be installed and enabled (it needs about 7 days of data for accurate forecasts); without it the tab is simply absent. The plugin's floating widget is hidden by default (theme setting)
 - Optional IP quality tab (`q`) in the detail page: IP type and ASN, whether the location databases agree, risk scores per database, risk factors (proxy, VPN, Tor, datacenter, abuser, robot) with the databases that flagged them, blacklist and mail-port results, for IPv4 and IPv6. It reads the snapshot of the ip-quality plugin (`komari-plugin-ipquality`, which runs [IPQuality](https://github.com/xykt/IPQuality) on the nodes); without it the tab is absent. Addresses arrive masked
+- Optional GFW tab (`w`) in the detail page: whether the node is blocked by the GFW (pingable from abroad but not from China), per IPv4 / IPv6, with probe counts. Blocked and suspect nodes also get a red or yellow `GFW` mark on their list card. It reads the snapshot of the gfw-check plugin (`komari-plugin-gfwcheck`); without it the tab and the mark are absent
 - Ping view per task: latency graph, loss markers, avg/min/max, p50/p95/p99, jitter; switchable time range
 - English / Chinese UI. The language is chosen from: the visitor's saved choice, the admin default, Komari's `language` cookie, then the browser language. Press `i` or click the language button to switch
 - Vim-style keyboard navigation
@@ -53,7 +54,7 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 | Key | Action |
 | --- | --- |
 | `h` `l` / `[` `]` | previous / next time range (1h, 6h, 24h, 7d, 30d; limited by the server's retention) |
-| `o` / `p` / `q` / `f` / `c` / `Tab` | overview / ping / ip quality / traffic / unlock / switch |
+| `o` / `p` / `q` / `w` / `f` / `c` / `Tab` | overview / ping / ip quality / gfw / traffic / unlock / switch |
 | `v` | ip quality: switch IPv4 / IPv6 |
 | `j` `k` | ping: select a task; overview: scroll |
 | `Enter` | ping: zoom into the selected task |

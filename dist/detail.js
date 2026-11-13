@@ -2,17 +2,18 @@
 // Reached with Enter from the list (#/node/<uuid>). All drawing is text, like the cards.
 import { esc, wcw, clip, stripEmoji, bytes, uptime, pct, ms, graph, bucketize, meter, box, padL, txt } from "./util.js";
 import { t as tr } from "./i18n.js";
-import { pingRecords, loadRecords, unlockSnapshot, forecastOverview, qualitySnapshot, invalidate } from "./api.js";
+import { pingRecords, loadRecords, unlockSnapshot, forecastOverview, qualitySnapshot, gfwSnapshot, invalidate } from "./api.js";
 import { nodeEntry } from "./unlock.js";
 import { nodeForecast, dailySeries } from "./forecast.js";
 import { nodeQuality } from "./quality.js";
+import { nodeGfw } from "./gfw.js";
 
 const RANGES = [[1, "1h"], [6, "6h"], [24, "24h"], [168, "7d"], [720, "30d"]];
 const $ = (id) => document.getElementById(id);
 
 export function createDetail(app) {
   const st = { uuid: null, tab: "overview", ri: 0, sel: 0, zoom: null, stack: "ipv4" };
-  const slots = { ping: null, load: null, unlock: null, forecast: null, quality: null }; // {key, at, value, err, loading, memo}
+  const slots = { ping: null, load: null, unlock: null, forecast: null, quality: null, gfw: null }; // {key, at, value, err, loading, memo}
   let timer = 0, lastHTML = "", pendingG = 0, DW = 90;
 
   const node = () => app.nodes().find((n) => n.uuid === st.uuid);
@@ -40,6 +41,7 @@ export function createDetail(app) {
     run("unlock", (uuid) => unlockSnapshot().then((snap) => nodeEntry(snap, uuid)));
     run("forecast", (uuid) => forecastOverview().then((o) => nodeForecast(o, uuid)));
     run("quality", (uuid) => qualitySnapshot().then((s) => nodeQuality(s, uuid)));
+    run("gfw", (uuid) => gfwSnapshot().then((s) => nodeGfw(s, uuid)));
     if (st.tab === "overview") run("load", loadRecords);
     render();
     await Promise.all(jobs);
@@ -388,6 +390,24 @@ export function createDetail(app) {
     return L.join("");
   }
 
+  // GFW status comes from the optional gfw-check plugin; no data means no tab
+  const hasGfw = () => !!(slots.gfw && slots.gfw.value);
+  const gfwClass = (s) => (s === "ok" ? "g" : s === "blocked" ? "r" : s === "unknown" ? "d" : "y");
+
+  function gfwTab(I) {
+    const g = slots.gfw.value, L = [], b = box(I);
+    L.push(b.top(tr("sec.gfw"), ` ${tr("gfw.s." + g.status)} `));
+    L.push(b.row([["", " "], [gfwClass(g.status), "● " + tr("gfw.d." + g.status)]]));
+    for (const [k, s] of Object.entries(g.stacks)) {
+      const pr = (c) => (c.total ? `${c.ok}/${c.total}` : "-");
+      L.push(pairsRow(b, [[tr("q." + k), tr("gfw.s." + s.status), gfwClass(s.status)], [tr("gfw.cn"), pr(s.cn), s.cn.total && !s.cn.ok ? "r" : "w"], [tr("gfw.abroad"), pr(s.foreign)],
+        ...(s.since ? [[tr("gfw.since"), stamp(s.since)]] : [])]));
+    }
+    L.push(b.bottom());
+    L.push(`<div class="dhead d">${txt([g.updatedAt && tr("q.at", { t: stamp(g.updatedAt) }), tr("gfw.rule")].filter(Boolean).join("  ·  "))}</div>`);
+    return L.join("");
+  }
+
   function head(n, r) {
     const on = r && app.live().online.has(n.uuid);
     return `<div class="dhead"><span class="${on ? "g" : "r"}">●</span> ${txt(on ? tr("up", { t: uptime(r.uptime) }) : tr("offline"))}` +
@@ -397,7 +417,7 @@ export function createDetail(app) {
   function tabs() {
     const t = (id, key, label) => `<span class="tab${st.tab === id ? " on" : ""}" data-tab="${id}"> ${key} ${txt(label)} </span>`;
     const rs = ranges().map((r, i) => `<span class="tab${i === Math.min(st.ri, ranges().length - 1) ? " on" : ""}" data-range="${i}"> ${r[1]} </span>`).join("");
-    return `<div class="ln tabs">${t("overview", "o", tr("tab.overview"))}${t("ping", "p", tr("tab.ping"))}${hasQuality() ? t("quality", "q", tr("tab.quality")) : ""}${hasForecast() ? t("traffic", "f", tr("tab.traffic")) : ""}${hasUnlock() ? t("unlock", "c", tr("tab.unlock")) : ""}<span class="sp"></span>${rs}</div>`;
+    return `<div class="ln tabs">${t("overview", "o", tr("tab.overview"))}${t("ping", "p", tr("tab.ping"))}${hasQuality() ? t("quality", "q", tr("tab.quality")) : ""}${hasGfw() ? t("gfw", "w", tr("tab.gfw")) : ""}${hasForecast() ? t("traffic", "f", tr("tab.traffic")) : ""}${hasUnlock() ? t("unlock", "c", tr("tab.unlock")) : ""}<span class="sp"></span>${rs}</div>`;
   }
 
   function render() {
@@ -406,11 +426,13 @@ export function createDetail(app) {
     if (!n) return;
     const I = DW - 2, r = app.live().data[n.uuid];
     let body;
+    if (st.tab === "gfw" && !hasGfw() && slots.gfw && !slots.gfw.loading) st.tab = "overview";
     if (st.tab === "unlock" && !hasUnlock() && slots.unlock && !slots.unlock.loading) st.tab = "overview";
     if (st.tab === "quality" && !hasQuality() && slots.quality && !slots.quality.loading) st.tab = "overview";
     if (st.tab === "quality" && hasQuality()) body = qualityTab(I);
     else if (st.tab === "traffic" && !hasForecast() && slots.forecast && !slots.forecast.loading) st.tab = "overview";
     else if (st.tab === "traffic" && hasForecast()) body = trafficTab(I);
+    else if (st.tab === "gfw" && hasGfw()) body = gfwTab(I);
     else if (st.tab === "unlock" && hasUnlock()) body = unlockTab(I);
     else if (st.tab === "ping") body = pingTab(I);
     else body = configBox(I, n, r) + resourcesBox(I, n, r) + pingSummaryBox(I);
@@ -430,7 +452,7 @@ export function createDetail(app) {
   }
 
   function show(uuid) {
-    if (st.uuid !== uuid) { st.tab = "overview"; st.sel = 0; st.zoom = null; slots.ping = slots.load = slots.unlock = slots.forecast = slots.quality = null; }
+    if (st.uuid !== uuid) { st.tab = "overview"; st.sel = 0; st.zoom = null; slots.ping = slots.load = slots.unlock = slots.forecast = slots.quality = slots.gfw = null; }
     st.uuid = uuid;
     $("detail").hidden = false;
     clearInterval(timer);
@@ -474,9 +496,10 @@ export function createDetail(app) {
       case "p": setTab("ping"); return true;
       case "q": if (hasQuality()) setTab("quality"); return true;
       case "v": if (st.tab === "quality" && hasQuality()) { const ks = Object.keys(slots.quality.value.stacks); st.stack = ks[(ks.indexOf(ks.includes(st.stack) ? st.stack : ks[0]) + 1) % ks.length]; lastHTML = ""; render(); } return true;
+      case "w": if (hasGfw()) setTab("gfw"); return true;
       case "f": if (hasForecast()) setTab("traffic"); return true;
       case "c": if (hasUnlock()) setTab("unlock"); return true;
-      case "Tab": { const tabs = ["overview", "ping", ...(hasQuality() ? ["quality"] : []), ...(hasForecast() ? ["traffic"] : []), ...(hasUnlock() ? ["unlock"] : [])]; setTab(tabs[(tabs.indexOf(st.tab) + 1) % tabs.length]); return true; }
+      case "Tab": { const tabs = ["overview", "ping", ...(hasQuality() ? ["quality"] : []), ...(hasGfw() ? ["gfw"] : []), ...(hasForecast() ? ["traffic"] : []), ...(hasUnlock() ? ["unlock"] : [])]; setTab(tabs[(tabs.indexOf(st.tab) + 1) % tabs.length]); return true; }
       case "j": case "ArrowDown": if (inPing) sel(st.sel + 1); else scrollBy({ top: 120 }); return true;
       case "k": case "ArrowUp": if (inPing) sel(st.sel - 1); else scrollBy({ top: -120 }); return true;
       case "g": if (g) { if (inPing) sel(0); scrollTo({ top: 0 }); } else pendingG = Date.now(); return true;
@@ -506,7 +529,7 @@ export function createDetail(app) {
     active: () => !!st.uuid,
     info: () => {
       const n = node();
-      return { mode: st.tab === "quality" ? "QUALITY" : st.tab === "traffic" ? "TRAFFIC" : st.tab === "unlock" ? "UNLOCK" : st.tab === "ping" ? (st.zoom != null ? "ZOOM" : "PING") : "DETAIL", name: n ? n.name : "", pos: rangeLabel() };
+      return { mode: st.tab === "quality" ? "QUALITY" : st.tab === "gfw" ? "GFW" : st.tab === "traffic" ? "TRAFFIC" : st.tab === "unlock" ? "UNLOCK" : st.tab === "ping" ? (st.zoom != null ? "ZOOM" : "PING") : "DETAIL", name: n ? n.name : "", pos: rangeLabel() };
     },
   };
 }

@@ -24,6 +24,7 @@ An unofficial Omarchy-style theme for the [Komari](https://github.com/komari-mon
 - `unlock.js` is pure logic (`pick`, `group`, `nodeEntry`) over the snapshot of the third-party unlock-test plugin; the tab is absent when the plugin is missing.
 - `forecast.js` is pure logic (`nodeForecast`, `dailySeries`) over the NetForecast plugin's `/api/plugin/net-forecast/overview`; like unlock, its tab is absent when the plugin is missing.
 - `quality.js` is pure logic (`nodeQuality`, `view`, `tally`) over the ip-quality plugin snapshot (`/api/plugin/ip-quality/snapshot`, the sibling repo `../komari-plugin-ipquality`); its tab is absent when the plugin is missing. In the detail page `v` switches IPv4/IPv6.
+- `gfw.js` is pure logic (`nodeGfw`, `cardFlag`) over the gfw-check plugin snapshot (`/api/plugin/gfw-check/snapshot`, the sibling repo `../komari-plugin-gfwcheck`); the `w` tab is absent when the plugin is missing, and `app.js` polls the snapshot every minute to mark blocked/suspect cards.
 - `komari-theme.json` is the theme manifest and the schema for admin-configurable settings (select options for palettes must match the palettes in `palettes.js`).
 - `style.css` declares the `cjk-fit` font that scales local CJK fonts so Chinese glyphs fit exactly two cells.
 

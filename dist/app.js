@@ -1,5 +1,6 @@
 import { esc, txt, wcw, clip, stripEmoji, bytes, uptime, pct, graph, meter, box } from "./util.js";
-import { getJSON } from "./api.js";
+import { getJSON, gfwSnapshot } from "./api.js";
+import { cardFlag } from "./gfw.js";
 import { createDetail } from "./detail.js";
 import { t as tr, getLang, setLang, onLang, detect } from "./i18n.js";
 
@@ -68,6 +69,7 @@ dark.addEventListener("change", () => applyPalette(currentPalette()));
 
 // ---- list card (a box drawn with text) ----
 // Only metrics that are safe to show publicly: no processes, IPs or remarks.
+let gfw = null; // gfw-check snapshot, refreshed every minute; null without the plugin
 function cardHTML(n, i) {
   const I = W - 2, b = box(I);
   const r = live.data[n.uuid];
@@ -80,8 +82,9 @@ function cardHTML(n, i) {
 
   const state = on ? ` ${tr("up", { t: uptime(r.uptime) })}` : ` ${tr("offline")}`;
   const sub = [stripEmoji(n.region), n.os].filter(Boolean).join(" · ");
-  const rem = I - 2 - wcw(state) - 3;
-  L.push(b.row([["", " "], [on ? "g" : "r", "●"], ["", state], ...(rem > 6 && sub ? [["d", " · " + clip(sub, rem)]] : [])]));
+  const flag = cardFlag(gfw, n.uuid), tag = flag ? ` GFW ${tr("gfw.s." + flag)}` : "";
+  const rem = I - 2 - wcw(state) - wcw(tag) - 3;
+  L.push(b.row([["", " "], [on ? "g" : "r", "●"], ["", state], ...(flag ? [[flag === "blocked" ? "r" : "y", tag]] : []), ...(rem > 6 && sub ? [["d", " · " + clip(sub, rem)]] : [])]));
 
   const bl = I - 5 - 7;
   const meterRow = (label, p, has) => b.row([["d", ` ${label} `], ...meter(p / 100, bl), ["w", (has ? p.toFixed(1) + "%" : "-").padStart(7) + " "]]);
@@ -429,6 +432,10 @@ document.addEventListener("visibilitychange", () => {
   if (wantLive) connect(); else { clearInterval(timer); ws && ws.close(); }
 });
 
+// the optional gfw-check plugin: flag blocked nodes on their cards
+const loadGfw = () => gfwSnapshot().then((s) => { gfw = s; }).catch(() => { gfw = null; }).then(() => { if (!detail.active()) render(); });
+setInterval(() => { if (!document.hidden) loadGfw(); }, 60000);
+
 // ---- boot ----
 banner = new OFX.Banner($("banner"), color);
 applyPalette("tokyo-night");
@@ -453,6 +460,7 @@ Promise.all([getJSON("/api/public").catch(() => ({})), getJSON("/api/nodes").cat
   setBanner(siteBanner(), !opening && settings.intro !== "off", settings.intro === "random" ? undefined : settings.intro);
   render();
   connect();
+  loadGfw();
   armIdle();
   if (opening) route();
 });
