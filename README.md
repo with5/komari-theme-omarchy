@@ -8,10 +8,10 @@ A terminal-style theme for [Komari](https://github.com/komari-monitor/komari) in
 
 ## Features
 
-- ASCII banner of the site name with random effects (decrypt, rain, beams, scatter, burn); click it or press `r` to replay
-- Site names the pixel font lacks (Chinese, accents) are rasterized from a system font into the same block art, so every effect still works
+- ASCII banner of the site name with all 37 text effects of the Omarchy screensaver ([ttfx](https://github.com/omacom/ttfx): beams, binarypath, blackhole, bouncyballs, bubbles, burn, colorshift, crumble, decrypt, errorcorrect, expand, fireworks, highlight, laseretch, matrix, middleout, orbittingvolley, overflow, pour, print, rain, randomsequence, rings, scattered, slice, slide, smoke, spotlights, spray, swarm, sweep, synthgrid, thunderstorm, unstable, vhstape, waves, wipe), random by default; click it or press `r` to replay. An old `scatter` setting plays `scattered`
+- The banner uses an ANSI Shadow style block font (A-Z, 0-9, `-_.`). Site names it lacks (Chinese, accents) are rasterized from a system font into the same block art with the same shadow, so every effect still works
 - An `admin` button in the status bar (and the `a` key) opens the Komari admin panel
-- Screensaver after 90 s idle, looping the same effects on black
+- Screensaver after 90 s idle, looping the same effects full screen on black (moving the mouse keeps it; click or press any key to close); the intro also plays full screen on a transparent layer and lands in the banner
 - btop-style cards: gradient meters and braille history graphs for CPU and network
 - 23 Omarchy palettes; follows light/dark by default, visitors can switch, admins set the defaults
 - Node detail page (`Enter` on a node): machine config, live resources with history graphs, and ping latency

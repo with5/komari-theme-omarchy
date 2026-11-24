@@ -31,7 +31,7 @@ let banner, bannerText = "";
 const dark = matchMedia("(prefers-color-scheme: dark)");
 const adminDefault = () => (dark.matches ? settings.palette_dark || "tokyo-night" : settings.palette_light || "catppuccin-latte");
 const colorCache = {};
-const TOKENS = { main: "accent", bright: "bright-foreground", dim: "muted", green: "green", cyan: "cyan", blue: "blue", orange: "orange", red: "red", yellow: "yellow" };
+const TOKENS = { main: "accent", bright: "bright-foreground", dim: "muted", green: "green", cyan: "cyan", blue: "blue", orange: "orange", red: "red", yellow: "yellow", magenta: "magenta" };
 const color = (tok) => colorCache[tok] || (colorCache[tok] = getComputedStyle(document.documentElement).getPropertyValue("--" + (TOKENS[tok] || tok)).trim() || "#888");
 
 function applyPalette(name) {
@@ -210,7 +210,7 @@ function startSaver() {
   if (saver || reduced.matches) return;
   saver = $("saver");
   saver.style.display = "flex";
-  saverBanner = new OFX.Banner($("saver-cv"), color);
+  saverBanner = new OFX.Banner($("saver-cv"), color, { full: true });
   saverBanner.set(linesFor(siteBanner()), innerWidth * 0.9, 44);
   saverBanner.onDone = () => { saverTimer = setTimeout(() => saverBanner && saverBanner.play(), 2500); };
   saverBanner.play();
@@ -227,9 +227,17 @@ function armIdle() {
   clearTimeout(idleTimer);
   if (settings.screensaver !== false) idleTimer = setTimeout(startSaver, 90000);
 }
-for (const ev of ["pointermove", "pointerdown", "wheel", "touchstart", "keydown"]) {
-  addEventListener(ev, () => { if (saver) stopSaver(); armIdle(); }, { passive: true });
+// Moving the mouse or scrolling keeps the screensaver up; a click, tap or key press closes it,
+// and that key does nothing else. Any activity outside the screensaver re-arms the idle timer.
+function wake(e) {
+  if (saver) {
+    if (e.type === "pointermove" || e.type === "wheel") return;
+    stopSaver();
+    if (e.type === "keydown") { e.preventDefault(); e.stopImmediatePropagation(); }
+  }
+  armIdle();
 }
+for (const ev of ["pointermove", "pointerdown", "wheel", "touchstart", "keydown"]) addEventListener(ev, wake, { passive: ev !== "keydown" });
 
 // ---- routing: #/node/<uuid> is the detail page; the URL path stays "/" so theme assets keep resolving ----
 const detail = createDetail({
@@ -437,7 +445,7 @@ const loadGfw = () => gfwSnapshot().then((s) => { gfw = s; }).catch(() => { gfw 
 setInterval(() => { if (!document.hidden) loadGfw(); }, 60000);
 
 // ---- boot ----
-banner = new OFX.Banner($("banner"), color);
+banner = new OFX.Banner($("banner"), color, { stage: $("fx-stage") });
 applyPalette("tokyo-night");
 setLang(detect(""), false);
 applyStatic();

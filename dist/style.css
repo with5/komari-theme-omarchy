@@ -83,6 +83,7 @@ body { padding-bottom: 34px; }
   font: inherit; line-height: 1.5; max-width: 96vw; overflow: auto; cursor: pointer;
 }
 .help[hidden] { display: none; }
+#fx-stage { position: fixed; left: 0; top: 0; display: none; pointer-events: none; z-index: 5; }
 #saver { position: fixed; inset: 0; background: #000; display: none; align-items: center; justify-content: center; z-index: 10; cursor: none; }
 @media (max-width: 480px) { .status .nm, .status .pal { display: none; } }
 
